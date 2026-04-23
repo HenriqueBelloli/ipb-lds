@@ -1,0 +1,29 @@
+services:
+  usuario-service:
+    container_name: usuario-service
+    build:
+      context: backend
+      dockerfile: docker/Dockerfile
+    ports:
+    - 8000:8002 #Porta 8002 para o serviço de usuarios
+    env_file:
+    - .env.usuario-service
+    - .env.usuario-service.db
+    volumes:
+      - ./backend/usuario_service:/app # O contexto do build não chega aqui, precisa do caminho inteiro
+    depends_on:
+      - usuario-service-db
+  
+  usuario-service-db:
+    container_name: usuario-service-db
+    image: postgres:16
+    env_file:
+      - .env.usuario-service.db
+    ports:
+      - 5433:5432 #Coloquei 5433 porque já tenho um postgres rodando na minha máquina
+    volumes:
+      - usuario-service-db-data:/var/lib/postgresql/data
+    
+volumes:
+  usuario-service-db-data:
+    
