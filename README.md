@@ -1,6 +1,6 @@
-# SDL Project Group 01 - Develop Branch
+# SDL Project Group 01
 
-Branch de desenvolvimento
+Estrutura inicial do repositório para o projeto da disciplina.
 
 ## Pastas
 
