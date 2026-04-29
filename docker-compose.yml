@@ -81,7 +81,15 @@ services:
     depends_on:
       - usuario-service-db
 
-
+  cliente-service-db:
+    container_name: cliente-service-db
+    image: postgres:16
+    env_file:
+      - .env.cliente-service.db
+    ports:
+      - 5435:5432
+    volumes:
+      - cliente-service-db-data:/var/lib/postgresql/data
   cliente-service:
     container_name: erp_cliente_service
     build:
@@ -89,8 +97,24 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8003"
+    env_file:
+      - backend/cliente-service/.env
+      - .env.cliente-service.db
+    volumes:
+      - ./backend/cliente-service:/app
+    depends_on:
+      cliente-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8003/api/cliente/health/"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
 
 
 volumes:
   auth-db-data:
   usuario-service-db-data:
+  cliente-service-db-data:
