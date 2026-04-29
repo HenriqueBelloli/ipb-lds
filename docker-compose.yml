@@ -81,6 +81,16 @@ services:
     depends_on:
       - usuario-service-db
 
+
+  cliente-service:
+    container_name: erp_cliente_service
+    build:
+      context: backend/cliente-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8003"
+
+
 volumes:
   auth-db-data:
   usuario-service-db-data:
