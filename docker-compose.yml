@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rabbitmq:
     container_name: erp_rabbitmq
@@ -72,10 +70,10 @@ services:
       context: backend
       dockerfile: docker/Dockerfile
     ports:
-    - 8000:8002
+      - 8000:8002
     env_file:
-    - .env.usuario-service
-    - .env.usuario-service.db
+      - .env.usuario-service
+      - .env.usuario-service.db
     volumes:
       - ./backend/usuario_service:/app
     depends_on:
@@ -87,32 +85,33 @@ services:
     env_file:
       - .env.cliente-service.db
     ports:
-      - 5435:5432
+      - "5435:5432"
     volumes:
       - cliente-service-db-data:/var/lib/postgresql/data
+
   cliente-service:
     container_name: erp_cliente_service
     build:
-      context: backend/cliente-service
+      context: backend/cliente_service
       dockerfile: Dockerfile
     ports:
-      - "8000:8003"
+      - "8003:8003"
     env_file:
-      - backend/cliente-service/.env
+      - backend/cliente_service/.env
       - .env.cliente-service.db
     volumes:
-      - ./backend/cliente-service:/app
+      - ./backend/cliente_service:/app
+    environment:
+      DB_HOST: cliente-service-db
+      RABBITMQ_HOST: rabbitmq
     depends_on:
-      cliente-service-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:8003/api/cliente/health/"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
-
+      - cliente-service-db
+      - rabbitmq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/api/cliente/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   auth-db-data:
