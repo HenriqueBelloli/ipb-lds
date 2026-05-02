@@ -1,60 +1,4 @@
-version: '3.8'
-
 services:
-  rabbitmq:
-    container_name: erp_rabbitmq
-    image: rabbitmq:3.12-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  db-auth:
-    container_name: erp_db_auth
-    image: postgres:15
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - auth-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  auth-service:
-    container_name: erp_auth
-    build:
-      context: backend/auth_service
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8001"
-    env_file:
-      - backend/auth_service/.env
-    environment:
-      DB_HOST: db-auth
-      RABBITMQ_HOST: rabbitmq
-    depends_on:
-      db-auth:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/api/auth/health/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   usuario-service-db:
     container_name: usuario-service-db
@@ -70,17 +14,16 @@ services:
     container_name: usuario-service
     build:
       context: backend
-      dockerfile: docker/Dockerfile
+      dockerfile: docker_usuario_service/Dockerfile
     ports:
     - 8000:8002
     env_file:
-    - .env.usuario-service
-    - .env.usuario-service.db
+    -  .env.usuario-service
+    -  .env.usuario-service.db
     volumes:
       - ./backend/usuario_service:/app
     depends_on:
       - usuario-service-db
 
 volumes:
-  auth-db-data:
   usuario-service-db-data:
