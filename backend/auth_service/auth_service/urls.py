@@ -12,6 +12,6 @@ def health_check(request):
 urlpatterns = [
     path('api/auth/health/', health_check, name='health-check'),
     path('api/auth/', include('authentication.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/auth/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/auth/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
