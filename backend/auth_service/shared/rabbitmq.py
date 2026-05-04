@@ -35,6 +35,7 @@ def publish_event(routing_key: str, data: dict):
 
 def start_consumer(queue_name: str, routing_keys: list, callback):
     def consume():
+        import traceback
         try:
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
@@ -43,7 +44,9 @@ def start_consumer(queue_name: str, routing_keys: list, callback):
                     credentials=pika.PlainCredentials(
                         os.environ.get('RABBITMQ_USER', 'guest'),
                         os.environ.get('RABBITMQ_PASS', 'guest')
-                    )
+                    ),
+                    connection_attempts=3,
+                    retry_delay=2
                 )
             )
             channel = connection.channel()
@@ -57,7 +60,7 @@ def start_consumer(queue_name: str, routing_keys: list, callback):
             logger.info(f'Consumidor iniciado: {queue_name} com routing keys {routing_keys}')
             channel.start_consuming()
         except Exception as e:
-            logger.error(f'Erro no consumer {queue_name}: {str(e)}')
+            logger.error(f'Erro no consumer {queue_name}: {str(e)}', exc_info=True)
             import time
             time.sleep(5)
             consume()
