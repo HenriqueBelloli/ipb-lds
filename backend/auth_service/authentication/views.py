@@ -78,6 +78,20 @@ def refresh(request):
         )
 
 
+@extend_schema(responses={200: MeSerializer})
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    token = request.auth
+    return Response({
+        'usuarioId': token.get('usuarioId'),
+        'email': token.get('email'),
+        'perfil': token.get('perfil'),
+        'delegacaoId': token.get('delegacaoId'),
+        'ativo': token.get('ativo'),
+    }, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
