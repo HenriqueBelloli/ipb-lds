@@ -1,29 +1,30 @@
 services:
 
-  usuario-service-db:
-    container_name: usuario-service-db
+  db-usuario:
+    container_name: db-usuario
+    build:
+      context: backend
     image: postgres:16
     env_file:
-      - .env.usuario-service.db
+      - .env
     ports:
       - 5433:5432
     volumes:
-      - usuario-service-db-data:/var/lib/postgresql/data
+      - db-usuario-data:/var/lib/postgresql/data
 
   usuario-service:
     container_name: usuario-service
     build:
       context: backend
-      dockerfile: docker_usuario_service/Dockerfile
+      dockerfile: usuario-service/Dockerfile
     ports:
     - 8000:8002
     env_file:
-    -  .env.usuario-service
-    -  .env.usuario-service.db
+    -  .env
     volumes:
       - ./backend/usuario_service:/app
     depends_on:
-      - usuario-service-db
+      - db-usuario
 
 volumes:
-  usuario-service-db-data:
+  db-usuario-data:
