@@ -51,3 +51,48 @@ class UsuarioCreateSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
+class UsuarioUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['nome', 'email', 'perfil', 'delegacaoId', 'ativo']
+
+    def validate_email(self, value):
+        qs = Usuario.objects.filter(email = value).exclude(pk = self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError("Este email já está em uso")
+        
+        return value
+
+
+class DelegacaoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delegacao
+        fields = [
+            'id', 'codigo', 'nome', 'localizacao',
+            'responsavelId', 'ativo', 'createdAt'
+        ]
+
+        read_only_fields = [
+            'id',
+            'createdAt'
+        ]
+
+class DelegacaoUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delegacao
+        fields = [
+            'codigo',
+            'nome',
+            'localizacao',
+            'reponsavelId',
+            'ativo'
+        ]
+    
+    def validate_codigo(self, value):
+        qs = Delegacao.objects.filter(codigo = value).exclude(pk = self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError("Este código já está em uso.")
+        
+        return value
