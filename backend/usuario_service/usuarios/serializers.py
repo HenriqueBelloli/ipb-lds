@@ -2,7 +2,7 @@ from .models import Usuario, Delegacao
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 
-class DelegacaoSerializer(serializers.ModelSerializer):
+class DelegacaoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Delegacao
         fields = [
@@ -16,7 +16,7 @@ class DelegacaoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'createdAt']
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class UsuarioListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = [
