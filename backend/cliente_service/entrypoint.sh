@@ -14,6 +14,7 @@ echo "PostgreSQL está pronto!"
 echo "A aplicar migrações..."
 pwd
 ls -la
+python manage.py makemigrations
 python manage.py migrate
 
 # 3. Iniciar o servidor Django
