@@ -1,22 +1,25 @@
 #!/bin/sh
-
-# O 'set -e' faz com que o script pare imediatamente se qualquer comando falhar
 set -e
 
-# 1. Esperar que o PostgreSQL esteja realmente pronto
-echo "A aguardar pelo PostgreSQL em $DB_HOST:5432..."
-while ! nc -z $DB_HOST 5432; do
-  sleep 0.5
-done
-echo "PostgreSQL está pronto!"
+echo "A aguardar pelo PostgreSQL..."
+python -c "
+import socket, time, os
+host = os.environ.get('POSTGRES_HOST', 'cliente-service-db')
+port = int(os.environ.get('POSTGRES_PORT', 5432))
+while True:
+    try:
+        s = socket.create_connection((host, port), timeout=1)
+        s.close()
+        print('PostgreSQL esta pronto!')
+        break
+    except Exception as e:
+        print('A aguardar...', e)
+        time.sleep(0.5)
+"
 
-# 2. Aplicar migrações (cria as tabelas na base de dados)
-echo "A aplicar migrações..."
-pwd
-ls -la
+echo "A aplicar migracoes..."
 python manage.py makemigrations
 python manage.py migrate
 
-# 3. Iniciar o servidor Django
 echo "A iniciar o servidor..."
 python manage.py runserver 0.0.0.0:8003
