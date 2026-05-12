@@ -1,40 +1,31 @@
 from rest_framework import serializers
-from .models import Cliente, Delegacao
+from .models import Cliente, ClienteDelegacao
 
-class DelegacaoSerializer(serializers.ModelsSerializer):
+
+class ClienteDelegacaoSerializer(serializers.ModelsSerializer):
     class Meta:
-        model = Delegacao
-        field = ['id', 'delegacao_id', 'nome']
+        model = ClienteDelegacao
+        fields = ['id', 'clienteId', 'createdAt']
+        read_only_fields = ['id', 'createdAt']
+
 
 class ClienteSerializer(serializers.ModelSerializer):
-    delegacoes = DelegacaoSerializer(many=True, read_only=True)
-    delegacao_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Delegacao.objects.all(),
-        source='delegacoes',
-        write_only=True,
-        required=False
-    )
+    delegacoes = ClienteDelegacaoSerializer(many=True, read_only=True)
+
     class Meta:
         model = Cliente
-        fields = ['id', 'nome', 'email', 'telefone', 'nif', 'delegacoes', 'delegacao_ids', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
+        fields = ['id', 'nome', 'telefone', 'email', 'morada', 'flaAssociado', 'ativo', 'createdAt', 'delegacoes', 'nif']
+        read_only_fields = ['id', 'createdAt']
+    
 class ClienteDetalheSerializer(ClienteSerializer):
-    """
-    Usando apenas no endpoint de detalhe (retrieve).
-    Enriquecido com dados do financeiro-service.
-    A lógica de inadimplencia é EXCLUSIVA do financeiro-service.
-    """
-    inadimplente = serializers.BooleanField(read_only=True, default=None, allow_null=True)
-    divida_total = serializers.FloatField(read_only=True, default=None, allow_null=True)
+    inadimplente = serializers.BooleanField(read_only=True, allow_null=True, default=None)
+    divida_total = serializers.FloatField(read_only=True,allow_null=True, default=None)
 
     class Meta(ClienteSerializer.Meta):
         fields = ClienteSerializer.Meta.fields + ['inadimplente', 'divida_total']
 
-class AssociarDelegacaoSerializer(serializers.Serializer):
-    """
-    Usando no endpoint de associação de delegação.
-    """
-    delegacao_id = serializers.IntegerField()
+class AssociaDelegacaoSerializer(serializers.Serializer):
+    delegacaoId = serializers.UUIDField()
+
+    def validate_delegacaoId(self, value):
+        return value
