@@ -92,8 +92,17 @@ REST_FRAMEWORK = {
     ]
 }
 
-print(os.getenv("POSTGRES_DB"))
-print(os.getenv("POSTGRES_PASSWORD"))
+# URL externas dos outros serviços 
+FINANCEIRO_SERVICE_URL = os.getenv('FINANCEIRO_SERVICE_URL', 'http://financeiro-service:8002')
+JWT_SECRET = os.getenv('JWT_SECRET', '')
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+# print(os.getenv("POSTGRES_DB"))
+# print(os.getenv("POSTGRES_PASSWORD"))
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,9 +124,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-pt'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Lisbon'
 
 USE_I18N = True
 
