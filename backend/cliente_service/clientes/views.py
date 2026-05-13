@@ -23,7 +23,11 @@ class ClienteViewSet(viewsets.ModelViewSet):
         ativo = self.request.query_params.get('ativo')
         if ativo is not None:
             qs = qs.filter(ativo=ativo.lower() == 'true')
-            return qs
+
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(nome__icontains=search) | qs.filter(nif__icontains=search)
+        return qs
         
     def retrieve(self, request, *args, **kwargs):
         client = self.get_object()
