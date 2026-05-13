@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Cliente, ClienteDelegacao
 
 
-class ClienteDelegacaoSerializer(serializers.ModelsSerializer):
+class ClienteDelegacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClienteDelegacao
         fields = ['id', 'clienteId', 'createdAt']

@@ -22,4 +22,4 @@ python manage.py makemigrations
 python manage.py migrate
 
 echo "A iniciar o servidor..."
-python manage.py runserver 0.0.0.0:8003 --noreload
+gunicorn cliente_service.wsgi:application --bind 0.0.0.0:8003 --workers 2

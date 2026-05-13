@@ -1,4 +1,4 @@
-mport httpx
+import httpx
 import logging
 from django.conf import settings
 

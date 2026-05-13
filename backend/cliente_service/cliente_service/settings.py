@@ -27,7 +27,9 @@ DEBUG = os.getenv('DEBUG','0') == '1'
 
 ALLOWED_HOSTS = ['*']
 
-
+# JWT - partilhado com o auth-service
+JWT_SECRET = os.getenv('JWT_SECRET', '')
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
 # Application definition
 
 INSTALLED_APPS = [

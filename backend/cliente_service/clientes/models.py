@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 from django.db import models
 
 
@@ -28,7 +28,7 @@ class Cliente(models.Model):
         return f'{self.nome} ({self.nif})'
 
 
-class Cliente(models.Model):
+class ClienteDelegacao(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4,editable=False)
     clienteId = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='delegacoes')
     delegacaoId = models.UUIDField() # refencia externa sem ForeignKey
@@ -41,4 +41,4 @@ class Cliente(models.Model):
 
 
     def __str__(self):
-        return f'Cliente {self.clienteId} -> Delegação {self.delegacaoId}'
+        return f'Cliente {self.cliente_id} -> Delegação {self.delegacaoId}'

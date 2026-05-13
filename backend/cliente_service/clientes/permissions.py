@@ -3,16 +3,14 @@ from django.conf import settings
 from rest_framework.permissions import BasePermission
 
 
-class IsAuthenticatedWithJWT(BasePermission):
-    """Copiado de shared/auth_middleware.
-    Valida o token JWT emitido pelo autn-service."""
+class IsAuthenticatedViaJWT(BasePermission):
     def has_permission(self, request, view):
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return False
         token = auth_header.split(' ')[1]
         try:
-            jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+            jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
             return True
         except jwt.ExpiredTokenError:
             return False
