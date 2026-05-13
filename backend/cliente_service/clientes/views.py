@@ -40,5 +40,18 @@ class ClienteViewSet(viewsets.ModelViewSet):
         cliente = self.get_object()
         serializer = AssociarDelegacaoSerializer(data=request.data)
 
+        if not serializer.is_valid():
+            return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
+        delegacao_id = serializer.validated_data['delegacaoId']
 
+        if ClienteDelegacao.objects.filter(clienteId=cliente, delegacaoId=delegacao_id).exists():
+            return Response({'datail': 'Associação já existe.'}, status=status.HTTP_409_CONFLICT)
+    @action(detail=True, methods=['delete'], url_path='delegacoes/(?P<delegacao_id>[^/.]+)')
+    def remover_delegacao(self, reques, pk=None, delegacao_id=None):
+        cliente = self.get_object()
+        deleted, _ = ClienteDelegacao.objects.filter(
+            clienteId=cliente, delegacaoId=delegacao_id).delete()
+
+        if not deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
     
