@@ -2,18 +2,11 @@ from uuid import uuid4
 from django.db import models
 
 
-class Delegacao(models.Model):
-    """Modelo para representar uma delegação."""
-    delegacao_id = models.IntegerField(unique=True)
-    nome = models.CharField(max_length=100)
-    def __str__(self):
-        return f'Delegação {self.delegacao_id}'
-
 class Cliente(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     nome = models.CharField(max_length=255)
     telefone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(unique=True, blank=True, null=True)
+    email = models.EmailField( blank=True, null=True)
     morada = models.CharField(max_length=500, null=True, blank=True)
     flagAssociado = models.BooleanField(default=False)
     ativo = models.BooleanField(default=True)

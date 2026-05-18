@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['*']
 
 # JWT - partilhado com o auth-service
 JWT_SECRET = os.getenv('JWT_SECRET', '')
-JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -103,7 +103,6 @@ REST_FRAMEWORK = {
 # URL externas dos outros serviços 
 FINANCEIRO_SERVICE_URL = os.getenv('FINANCEIRO_SERVICE_URL', 'http://financeiro-service:8002')
 JWT_SECRET = os.getenv('JWT_SECRET', '')
-JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -143,5 +142,3 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
