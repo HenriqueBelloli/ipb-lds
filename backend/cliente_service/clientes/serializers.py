@@ -14,12 +14,13 @@ class ClienteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cliente
-        fields = ['id', 'nome', 'telefone', 'email', 'morada', 'flaAssociado', 'ativo', 'createdAt', 'delegacoes', 'nif']
+        fields = ['id', 'nome', 'telefone', 'email', 'morada', 'flaAssociado', 'ativo', 'createdAt', 'delegacoes', 'nif', 'tipoPreco']
         read_only_fields = ['id', 'createdAt']
     
 class ClienteDetalheSerializer(ClienteSerializer):
     inadimplente = serializers.BooleanField(read_only=True, allow_null=True, default=None)
     divida_total = serializers.FloatField(read_only=True,allow_null=True, default=None)
+    tipoPreco = serializers.SerializerMethodField(read_only=True, allow_null=True, default=None)
 
     class Meta(ClienteSerializer.Meta):
         fields = ClienteSerializer.Meta.fields + ['inadimplente', 'divida_total']

@@ -5,9 +5,9 @@ from .models import Cliente, ClienteDelegacao
 class ClienteAdmin(admin.ModelAdmin):
     list_display = ['nome', 'nif', 'email', 'ativo', 'flagAssociado']
     search_fields = ['nome', 'nif', 'email']
-    list_filter = ['ativo', 'flagAssociado']
+    list_filter   = ['ativo', 'flagAssociado']
 
 
 @admin.register(ClienteDelegacao)
 class ClienteDelegacaoAdmin(admin.ModelAdmin):
-    list_display = ['clienteId', 'delegacaoId', 'createAt']
+    list_display = ['clienteId', 'delegacaoId', 'createdAt']

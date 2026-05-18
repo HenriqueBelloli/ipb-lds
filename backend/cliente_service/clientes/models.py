@@ -15,7 +15,7 @@ class Cliente(models.Model):
     telefone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(unique=True, blank=True, null=True)
     morada = models.CharField(max_length=500, null=True, blank=True)
-    flaAssociado = models.BooleanField(default=False)
+    flagAssociado = models.BooleanField(default=False)
     ativo = models.BooleanField(default=True)
     nif = models.CharField(max_length=20, unique=True)
     createdAt = models.DateTimeField(auto_now_add=True)
@@ -30,7 +30,7 @@ class Cliente(models.Model):
 
 class ClienteDelegacao(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4,editable=False)
-    clienteId = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='delegacoes')
+    clienteId = models.ForeignKey(Cliente, on_delete=models.CASCADE, db_column='clienteId', related_name='delegacoes')
     delegacaoId = models.UUIDField() # refencia externa sem ForeignKey
     createdAt = models.DateTimeField(auto_now_add=True)
 
@@ -38,6 +38,7 @@ class ClienteDelegacao(models.Model):
     class Meta:
         db_table = 'cliente_delegacoes'
         unique_together = ['clienteId', 'delegacaoId']
+        ordering = ['-createdAt']
 
 
     def __str__(self):

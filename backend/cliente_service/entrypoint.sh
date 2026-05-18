@@ -18,8 +18,11 @@ while True:
 "
 
 echo "A aplicar migracoes..."
-python manage.py makemigrations
-python manage.py migrate
+python manage.py makemigrations --noinput
+python manage.py migrate --noinput
+
+echo 'A recolher ficheiros estaticos...'
+python manage.py collectstatic --noinput
 
 echo "A iniciar o servidor..."
 gunicorn cliente_service.wsgi:application --bind 0.0.0.0:8003 --workers 2
