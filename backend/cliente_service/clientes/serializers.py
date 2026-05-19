@@ -18,13 +18,12 @@ class ClienteSerializer(serializers.ModelSerializer):
     
 class ClienteDetalheSerializer(ClienteSerializer):
     inadimplente = serializers.BooleanField(read_only=True, allow_null=True, default=None)
-    divida_total = serializers.FloatField(read_only=True,allow_null=True, default=None)
     tipoPreco = serializers.SerializerMethodField(read_only=True, allow_null=True, default=None)
 
     class Meta(ClienteSerializer.Meta):
         fields = ClienteSerializer.Meta.fields + ['inadimplente', 'divida_total']
 
-class AssociaDelegacaoSerializer(serializers.Serializer):
+class AssociarDelegacaoSerializer(serializers.Serializer):
     delegacaoId = serializers.UUIDField()
 
     def validate_delegacaoId(self, value):

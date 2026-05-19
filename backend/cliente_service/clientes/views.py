@@ -1,61 +1,87 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Cliente, ClienteDelegacao
 from .serializers import (
     ClienteSerializer,
     ClienteDetalheSerializer,
-    AssociaDelegacaoSerializer,
+    ClienteDelegacaoSerializer,
+    AssociarDelegacaoSerializer,
 )
-from .services import obter_inadimplencia
-from .permissions import IsAuthenticatedViaJWT
+from .services import FinanceiroServiceClient
+from .permissions import JWTAuthentication, IsOperador
 
 
 class ClienteViewSet(viewsets.ModelViewSet):
-    queryset = Cliente.objects.prefetch_related('delegacoes').all()
+    queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
-    permission_classes = [IsAuthenticatedViaJWT]
+    authentication_classes = [JWTAuthentication]
+
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'associar_delegacao'):
+            return [IsOperador()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
-        qs = super().ger_queryset()
-        ativo = self.request.query_params.get('ativo')
+        qs = Cliente.objects.all()
+        params = self.request.query_params
+
+        nome = params.get('nome')
+        nif = params.get('nif')
+        flag_associado = params.get('flagAssociado')
+        delegacao_id = params.get('delegacaoId')
+        ativo = params.get('ativo')
+
+        if nome:
+            qs = qs.filter(nome__icontains=nome)
+        if nif:
+            qs = qs.filter(nif__icontains=nif)
+        if flag_associado is not None:
+            qs = qs.filter(flagAssociado=flag_associado.lower() == 'true')
+        if delegacao_id:
+            ids = ClienteDelegacao.objects.filter(
+                delegacaoId=delegacao_id
+            ).values_list('clienteId', flat=True)
+            qs = qs.filter(id__in=ids)
         if ativo is not None:
             qs = qs.filter(ativo=ativo.lower() == 'true')
 
-        search = self.request.query_params.get('search')
-        if search:
-            qs = qs.filter(nome__icontains=search) | qs.filter(nif__icontains=search)
-        return qs
-        
+        return qs.order_by('-createdAt')
+
     def retrieve(self, request, *args, **kwargs):
-        client = self.get_object()
-
-        dados_financeiros = obter_inadimplencia(str(client.id))
-
-        data = ClienteDetalheSerializer(client).data
-        data['inadimplente'] = dados_financeiros.get('inadimplente') if dados_financeiros else None
-        data['divida_total'] = dados_financeiros.get('divida_total') if dados_financeiros else None
-
-        return Response(data)
-    @action(detail=True, methods=['post'], url_path='delegacoes')
-    def associar_delegacao(self, request, pk=None):
         cliente = self.get_object()
+        # ⚠ PONTO DE REVISÃO SÉNIOR — ver services/financeiro_client.py
+        token = request.auth or ''
+        inadimplente = FinanceiroServiceClient.verificar_inadimplente(
+            str(cliente.id), token
+        )
+        serializer = ClienteDetalheSerializer(
+            cliente,
+            context={'inadimplente': inadimplente, 'request': request},
+        )
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    @action(detail=True, methods=['get', 'post'], url_path='delegacoes')
+    def delegacoes(self, request, pk=None):
+        cliente = self.get_object()
+
+        if request.method == 'GET':
+            qs = ClienteDelegacao.objects.filter(clienteId=cliente)
+            return Response(ClienteDelegacaoSerializer(qs, many=True).data)
+
+        # POST
         serializer = AssociarDelegacaoSerializer(data=request.data)
-
         if not serializer.is_valid():
-            return Response(serializer.error, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         delegacao_id = serializer.validated_data['delegacaoId']
-
-        if ClienteDelegacao.objects.filter(clienteId=cliente, delegacaoId=delegacao_id).exists():
-            return Response({'datail': 'Associação já existe.'}, status=status.HTTP_409_CONFLICT)
-    @action(detail=True, methods=['delete'], url_path='delegacoes/(?P<delegacao_id>[^/.]+)')
-    def remover_delegacao(self, reques, pk=None, delegacao_id=None):
-        cliente = self.get_object()
-        deleted, _ = ClienteDelegacao.objects.filter(
-            clienteId=cliente, delegacaoId=delegacao_id).delete()
-
-        if not deleted:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-    
+        obj, created = ClienteDelegacao.objects.get_or_create(
+            clienteId=cliente,
+            delegacaoId=delegacao_id,
+        )
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(ClienteDelegacaoSerializer(obj).data, status=status_code)
