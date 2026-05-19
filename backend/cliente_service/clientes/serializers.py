@@ -5,7 +5,7 @@ from .models import Cliente, ClienteDelegacao
 class ClienteDelegacaoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClienteDelegacao
-        fields = ['id', 'clienteId', 'createdAt']
+        fields = ['id', 'clienteId', 'delegacaoId', 'createdAt']
         read_only_fields = ['id', 'createdAt']
 
 
@@ -14,8 +14,7 @@ class ClienteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cliente
-        fields = ['id', 'nome', 'telefone', 'email', 'morada', 'flaAssociado', 'ativo', 'createdAt', 'delegacoes', 'nif', 'tipoPreco']
-        read_only_fields = ['id', 'createdAt']
+        fields = ['id', 'nif', 'nome', 'telefone', 'email', 'morada', 'flagAssociado', 'ativo', 'createdAt']
     
 class ClienteDetalheSerializer(ClienteSerializer):
     inadimplente = serializers.BooleanField(read_only=True, allow_null=True, default=None)
