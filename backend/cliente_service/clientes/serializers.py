@@ -10,18 +10,29 @@ class ClienteDelegacaoSerializer(serializers.ModelSerializer):
 
 
 class ClienteSerializer(serializers.ModelSerializer):
-    delegacoes = ClienteDelegacaoSerializer(many=True, read_only=True)
-
     class Meta:
         model = Cliente
-        fields = ['id', 'nif', 'nome', 'telefone', 'email', 'morada', 'flagAssociado', 'ativo', 'createdAt']
-    
+        fields = ['id', 'nif', 'nome', 'telefone', 'email',
+                  'morada', 'flagAssociado', 'ativo', 'createdAt']
+        read_only_fields = ['id', 'createdAt']
+
+
 class ClienteDetalheSerializer(ClienteSerializer):
-    inadimplente = serializers.BooleanField(read_only=True, allow_null=True, default=None)
-    tipoPreco = serializers.SerializerMethodField(read_only=True, allow_null=True, default=None)
+    inadimplente = serializers.SerializerMethodField()
+    tipoPreco = serializers.SerializerMethodField()
 
     class Meta(ClienteSerializer.Meta):
-        fields = ClienteSerializer.Meta.fields + ['inadimplente', 'divida_total']
+        fields = ClienteSerializer.Meta.fields + ['inadimplente', 'tipoPreco']
+
+    def get_inadimplente(self, obj):
+        return self.context.get('inadimplente', False)
+
+    def get_tipoPreco(self, obj):
+        inadimplente = self.context.get('inadimplente', False)
+        if obj.flagAssociado and not inadimplente:
+            return 'ASSOCIADO'
+        return 'NAO_ASSOCIADO'
+
 
 class AssociarDelegacaoSerializer(serializers.Serializer):
     delegacaoId = serializers.UUIDField()

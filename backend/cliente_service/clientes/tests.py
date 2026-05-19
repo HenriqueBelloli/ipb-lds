@@ -11,7 +11,7 @@ class ClienteAPITestCase(TestCase):
             nome='João Silva',
             email='joao@email.com'
         )
-    def tes_listar_clientes(self):
+    def test_listar_clientes(self):
         response = self.client_api.get('/api/clientes/')
         self.assertEqual(response.status_code, 200)
 
@@ -35,17 +35,16 @@ class ClienteAPITestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_eliminar_cliente(self):
-        response = self.client_api.delete(f'/api/clientes/{self.cliente.id}/')
+        response = self.cliente_api.delete(f'/api/clientes/{self.cliente.id}/')
         self.assertEqual(response.status_code, 204)
 
-    def test_associar_delegacao(sefl):
-        response = sefl.cliente_api.post(
-            f'/api/clientes/{sefl.client.id}/delegacoes/',{'delegacaoId': str(uuid.uuid4())}, format='json'
+    def test_associar_delegacao(self):
+        response = self.cliente_api.post(
+            f'/api/clientes/{self.client.id}/delegacoes/',{'delegacaoId': str(uuid.uuid4())}, format='json'
         )
-        sefl.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 201)
 
-    def test_nif_duplicado(sefl):
-        response = sefl.client_api.post('/api/clientes/', {'nif': '123456789', 'nome': 'Marcos Diva', 'email': 'marcosdiva@email.com'
+    def test_nif_duplicado(self):
+        response = self.client_api.post('/api/clientes/', {'nif': '123456789', 'nome': 'Marcos Diva', 'email': 'marcosdiva@email.com'
         }, format='json')
-        sefl.assertEqual(response.status_code, 400)
-
+        self.assertEqual(response.status_code, 400)
