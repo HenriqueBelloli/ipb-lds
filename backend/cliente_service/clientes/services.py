@@ -8,10 +8,8 @@ class FinanceiroServiceClient:
     BASE_URL = settings.FINANCEIRO_SERVICE_URL
     @staticmethod
     def verificar_inadimplente(cliente_id: str, token: str) -> bool:
-        """
-        gggggggg
-        """
-        url, f'{FinanceiroServiceClient.BASE_URL}/api/financeiro/clientes/{cliente_id}/inadimplente/'
+
+        url = f'{FinanceiroServiceClient.BASE_URL}/api/financeiro/clientes/{cliente_id}/inadimplente/'
         try:
             response = requests.get(
                 url,

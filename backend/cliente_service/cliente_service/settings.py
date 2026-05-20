@@ -89,6 +89,7 @@ DATABASES = {
     }
 }
 # Configuração do DRF
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'clientes.permissions.JWTAuthentication',
@@ -98,7 +99,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-}
+} 
 
 # URL externas dos outros serviços 
 FINANCEIRO_SERVICE_URL = os.getenv('FINANCEIRO_SERVICE_URL', 'http://financeiro-service:8002')

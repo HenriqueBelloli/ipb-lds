@@ -12,7 +12,6 @@ from .serializers import (
 from .services import FinanceiroServiceClient
 from .permissions import JWTAuthentication, IsOperador
 
-
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
@@ -22,6 +21,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update', 'associar_delegacao'):
             return [IsOperador()]
         return [IsAuthenticated()]
+
 
     def get_queryset(self):
         qs = Cliente.objects.all()
