@@ -5,6 +5,7 @@ from rest_framework.permissions import BasePermission, AllowAny
 from rest_framework import status
 from .serializers import *
 from .models import Usuario, Delegacao
+from .publishers import publish_usuario_criado, publish_usuario_desativado
 
 # Create your views here.
 
@@ -45,6 +46,11 @@ class UsuarioListCreateView(APIView):
     #permission_classes = [IsAdministrator]
     permission_classes = [AllowAny]
 
+    def perform_create(self, serializer):
+        usuario = serializer.save()
+        publish_usuario_criado(usuario)
+        
+
     def get(self, request):
         qs = Usuario.objects.all()
 
@@ -77,7 +83,7 @@ class UsuarioListCreateView(APIView):
         serializer = UsuarioCreateSerializer(data = request.data)
 
         if serializer.is_valid():
-            serializer.save()
+            self.perform_create(serializer)
 
             return Response(serializer.data, status = status.HTTP_201_CREATED)
         
@@ -91,6 +97,14 @@ class UsuarioDetailUpdateView(APIView):
     #permission_classes = [IsAdministrator]
     permission_classes = [AllowAny]
 
+    def perform_update(self, serializer, pk):
+        usuario_anterior = self._get_object(pk)
+        usuario = serializer.save()
+
+        #publicar o evento se foi desativado
+        if usuario_anterior.ativo and not usuario.ativo:
+            publish_usuario_desativado(usuario)
+
     def _get_object(self, pk):
         return get_object_or_404(Usuario, pk = pk)
     
@@ -102,9 +116,9 @@ class UsuarioDetailUpdateView(APIView):
     
     def put(self, request, pk):
         usuario = self._get_object(pk)
-        serializer = UsuarioUpdateSerializer(usuario, data = request.data, partial = false)
+        serializer = UsuarioUpdateSerializer(usuario, data = request.data, partial = True)
         if serializer.is_valid():
-            serializer.save()
+            self.perform_update(serializer, pk)
             
             return Response(UsuarioListSerializer(usuario).data, status = status.HTTP_200_OK)
         
@@ -163,7 +177,7 @@ class DelegacaoUpdateView(APIView):
     def put(self, request, pk):
         delegacao = get_object_or_404(Delegacao, pk = pk)
 
-        serializer = DelegacaoUpdateSerializer(delegacao, data = request.data, partial = False)
+        serializer = DelegacaoUpdateSerializer(delegacao, data = request.data, partial = True)
 
         if serializer.is_valid():
             serializer.save()

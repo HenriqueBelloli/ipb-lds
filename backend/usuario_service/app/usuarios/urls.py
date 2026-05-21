@@ -1,4 +1,6 @@
 from django.urls import path
+from rest_framework import routers
+
 from .views import (
     UsuarioListCreateView,
     UsuarioDetailUpdateView,
@@ -10,6 +12,7 @@ urlpatterns = [
     # Utilizadores
     path('usuarios/', UsuarioListCreateView.as_view(), name='usuario-list-create'),
     path('usuarios/<uuid:pk>/', UsuarioDetailUpdateView.as_view(), name='usuario-detail-update'),
+
 
     # Delegações
     path('delegacoes/', DelegacaoListCreateView.as_view(), name='delegacao-list-create'),

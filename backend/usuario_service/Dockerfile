@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/l
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY usuario_service/ .
+COPY app/ .
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

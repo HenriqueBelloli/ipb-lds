@@ -85,7 +85,7 @@ class DelegacaoUpdateSerializer(serializers.ModelSerializer):
             'codigo',
             'nome',
             'localizacao',
-            'reponsavelId',
+            'responsavelId',
             'ativo'
         ]
     
