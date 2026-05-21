@@ -2,7 +2,7 @@ from django.urls import path
 from .views import ClienteViewSet
 
 cliente_list = ClienteViewSet.as_view({'get':'list', 'post': 'create',})
-cliente_detail = ClienteViewSet.as_view({'get': 'retrieve', 'put':'update'})
+cliente_detail = ClienteViewSet.as_view({'get': 'retrieve', 'put':'update', 'patch': 'partial_update'})
 cliente_delegs = ClienteViewSet.as_view({'get': 'delegacoes', 'post': 'delegacoes'})
 
 

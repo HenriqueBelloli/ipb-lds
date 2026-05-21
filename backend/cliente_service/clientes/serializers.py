@@ -23,7 +23,7 @@ class ClienteDetalheSerializer(ClienteSerializer):
 
     class Meta(ClienteSerializer.Meta):
         fields = ClienteSerializer.Meta.fields + ['inadimplente', 'tipoPreco']
-
+# os campos que vão ser atualizados para o cliente!
     def get_inadimplente(self, obj):
         return self.context.get('inadimplente', False)
 
