@@ -6,10 +6,14 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.pardir(__file__)))
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-change-in-production')
+DEBUG = os.getenv('DEBUG', '0') == '1'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+#######
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-
+#######
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -19,7 +23,6 @@ SECRET_KEY = 'django-insecure-3$1nmho&46q&o%sc7=m7qlm7c(6%2$8h!@ur1_^3+%6^44+6hi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -32,7 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'core',
+    'servicos',
 ]
 
 MIDDLEWARE = [
@@ -70,8 +73,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'servico_db'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('POSTGRES_HOST', 'servico-service-db'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -93,6 +100,21 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'shared.auth_middleware.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', 'PAGE_SIZE': 20,
+}
+
+JWT_SECRET = os.getenv('JWT_SECRET', '')
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM', 'HS256')
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Internationalization

@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from django.servicos.exceptions import ValidationError
 
 def validar_percentual_entrada(value):
     if value < 0 or value > 100:
