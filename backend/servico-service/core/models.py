@@ -12,6 +12,7 @@ class Servico(models.Model):
 
     def __str__(self):
         return self.nome
+    
 class ServicoDelegacao(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     servicoId = models.ForeignKey(Servico, on_delete=models.CASCADE, related_name='delegacoes')
