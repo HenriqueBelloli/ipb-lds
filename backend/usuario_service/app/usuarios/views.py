@@ -6,6 +6,7 @@ from rest_framework import status
 from .serializers import *
 from .models import Usuario, Delegacao
 from .publishers import publish_usuario_criado, publish_usuario_desativado
+from drf_spectacular.utils import extend_schema
 
 # Create your views here.
 
@@ -51,6 +52,9 @@ class UsuarioListCreateView(APIView):
         publish_usuario_criado(usuario)
         
 
+    @extend_schema(
+            responses=UsuarioListSerializer(many=True)
+    )
     def get(self, request):
         qs = Usuario.objects.all()
 
@@ -79,6 +83,10 @@ class UsuarioListCreateView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    @extend_schema(
+            request=UsuarioCreateSerializer,
+            responses=UsuarioCreateSerializer
+    )
     def post(self, request):
         serializer = UsuarioCreateSerializer(data = request.data)
 
@@ -108,12 +116,19 @@ class UsuarioDetailUpdateView(APIView):
     def _get_object(self, pk):
         return get_object_or_404(Usuario, pk = pk)
     
+    @extend_schema(
+            responses=UsuarioListSerializer(many=False)
+    )
     def get(self, request, pk):
         usuario = self._get_object(pk)
         serializer = UsuarioListSerializer(usuario)
 
         return Response(serializer.data, status = status.HTTP_200_OK)
     
+    @extend_schema(
+            request=UsuarioUpdateSerializer,
+            responses=UsuarioListSerializer(many=False)
+    )
     def put(self, request, pk):
         usuario = self._get_object(pk)
         serializer = UsuarioUpdateSerializer(usuario, data = request.data, partial = True)
@@ -137,6 +152,9 @@ class DelegacaoListCreateView(APIView):
 
     permission_classes = [AllowAny]
     
+    @extend_schema(
+            responses=DelegacaoListSerializer(many=True)
+    )
     def get(self, request):
         qs = Delegacao.objects.filter(ativo = True)
 
@@ -157,6 +175,10 @@ class DelegacaoListCreateView(APIView):
 
         return Response(serializer.data, status = status.HTTP_200_OK)
     
+    @extend_schema(
+            request=DelegacaoCreateSerializer,
+            responses=DelegacaoCreateSerializer
+    )
     def post(self, request):
         serializer = DelegacaoCreateSerializer(data = request.data)
 
@@ -174,6 +196,10 @@ class DelegacaoUpdateView(APIView):
     #permission_classes = [IsAdministrator]
     permission_classes = [AllowAny]
 
+    @extend_schema(
+            request=DelegacaoUpdateSerializer,
+            responses=DelegacaoListSerializer(many=False)
+    )
     def put(self, request, pk):
         delegacao = get_object_or_404(Delegacao, pk = pk)
 
