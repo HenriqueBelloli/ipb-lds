@@ -1,13 +1,51 @@
-version: '3.8'
-
 services:
-  backend:
+  db-financeiro:
+    container_name: db-financeiro
+    image: postgres:16
+    env_file:
+      - ./backend/financeiro_service/.env
+    ports:
+      - 5433:5432
+    volumes:
+      - db-financeiro-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financeiro -d financeiro_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  financeiro-service:
+    container_name: financeiro-service
     build:
-      context: .
+      context: ./backend/financeiro_service 
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - 8006:8006
+    env_file:
+      - ./backend/financeiro_service/.env
     volumes:
-      - ./backend/auth_service:/app
+      - ./backend/financeiro_service/app:/app
+    depends_on:
+      db-financeiro:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  
+  rabbitmq:
+    container_name: erp_rabbitmq
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
     environment:
-      - DJANGO_SETTINGS_MODULE=auth_service.settings
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  db-financeiro-data:
