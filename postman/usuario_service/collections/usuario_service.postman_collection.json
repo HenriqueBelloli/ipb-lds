@@ -1,0 +1,184 @@
+{
+  "info": {
+    "_postman_id": "45c11ba5-200a-43d0-86f6-37323199a1c6",
+    "name": "usuario_service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51388238",
+    "_collection_link": "https://go.postman.co/collection/51388238-45c11ba5-200a-43d0-86f6-37323199a1c6?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "CriarUsuario",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nome\": \"Pedro5\",\n    \"email\": \"pedro5@teste.pt\",\n    \"password\": \"password12345\",\n    \"perfil\": \"OPERADOR\",\n    \"delegacaoId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/usuarios/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "usuarios",
+            ""
+          ]
+        },
+        "description": "ListaUsuario"
+      },
+      "response": []
+    },
+    {
+      "name": "ListarUsuarios",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/usuarios/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "usuarios",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "CriarDelegacao",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"codigo\": \"D1\",\n    \"nome\": \"Delegacao\",\n    \"localizacao\": \"Localizacao\",\n    \"responsavelId\": null\n\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/delegacoes/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "delegacoes",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ListarDelegacoes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/delegacoes/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "delegacoes",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AtualizarUsuario",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"ativo\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/usuarios/644006e5-e49a-4e31-80bd-acd2680ebd1e/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "usuarios",
+            "644006e5-e49a-4e31-80bd-acd2680ebd1e",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AtualizarDelegacao",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nome\": \"NovoNomeDaDelegacao\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/delegacoes/e1b10339-03ec-4c2a-9cc4-dc0a09bd9c66/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "delegacoes",
+            "e1b10339-03ec-4c2a-9cc4-dc0a09bd9c66",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "UsuarioDetalhes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/usuarios/7cf58e62-6030-404b-a5aa-fea87b5d9a2a/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "usuarios",
+            "7cf58e62-6030-404b-a5aa-fea87b5d9a2a",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
