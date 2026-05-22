@@ -12,39 +12,22 @@ from .serializers import (
 from .services import FinanceiroServiceClient
 from .permissions import JWTAuthentication, IsOperador
 
-#### DESATIVAR PARA PERMITIR O TESTE
-""" 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
     authentication_classes = [JWTAuthentication]
-
     def get_permissions(self):
         if self.action in ('create', 'update', 'partial_update', 'associar_delegacao'):
             return [IsOperador()]
-        return [IsAuthenticated()] """
-
-#### ATÉ AQUI TIRA
-
-class ClienteViewSet(viewsets.ModelViewSet):
-    queryset = Cliente.objects.all()
-    serializer_class = ClienteSerializer
-    authentication_classes = []
-    permission_classes = []
-
-    def get_permissions(self):
-        return []
-### NÃO FAZ PARTE ATÉ AQUI
+        return [IsAuthenticated()]
     def get_queryset(self):
         qs = Cliente.objects.all()
         params = self.request.query_params
-
         nome = params.get('nome')
         nif = params.get('nif')
         flag_associado = params.get('flagAssociado')
         delegacao_id = params.get('delegacaoId')
         ativo = params.get('ativo')
-
         if nome:
             qs = qs.filter(nome__icontains=nome)
         if nif:
@@ -58,14 +41,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
             qs = qs.filter(id__in=ids)
         if ativo is not None:
             qs = qs.filter(ativo=ativo.lower() == 'true')
-
         return qs.order_by('-createdAt')
-    
-# criar um metodo de atualizar/put informaçao de cliente igual a retrieve
-
     def retrieve(self, request, *args, **kwargs):
         cliente = self.get_object()
-        # ⚠ PONTO DE REVISÃO SÉNIOR — ver services/financeiro_client.py
         token = request.auth or ''
         inadimplente = FinanceiroServiceClient.verificar_inadimplente(
             str(cliente.id), token
@@ -75,28 +53,26 @@ class ClienteViewSet(viewsets.ModelViewSet):
             context={'inadimplente': inadimplente, 'request': request},
         )
         return Response(serializer.data)
-    
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         cliente = self.get_object()
-        print(cliente)
-        return Response(status=status.HTTP_200_OK)
-
+        serializer = self.get_serializer(cliente, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    def perform_update(self, serializer):
+        serializer.save()
     def perform_create(self, serializer):
         serializer.save()
-
     @action(detail=True, methods=['get', 'post'], url_path='delegacoes')
     def delegacoes(self, request, pk=None):
         cliente = self.get_object()
-
         if request.method == 'GET':
             qs = ClienteDelegacao.objects.filter(clienteId=cliente)
             return Response(ClienteDelegacaoSerializer(qs, many=True).data)
-
         # POST
         serializer = AssociarDelegacaoSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         delegacao_id = serializer.validated_data['delegacaoId']
         obj, created = ClienteDelegacao.objects.get_or_create(
             clienteId=cliente,
