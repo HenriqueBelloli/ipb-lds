@@ -55,7 +55,18 @@ class ContasReceberListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ContasReceberDetailView(APIView):
-    pass
+    
+    permission_classes = [AllowAny]
+
+    def _get_object(self, pk):
+        return get_object_or_404(ContaReceber, pk=pk)
+
+    def get(self, request, pk):
+        conta = self._get_object(pk)
+        serializer = ContasReceberListSerializer(conta, many=False)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
 
 class ContasReceberUpdateView(APIView):
     pass
