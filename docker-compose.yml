@@ -124,6 +124,32 @@ services:
     volumes:
       - postgres_notification_data:/var/lib/postgresql/data
 
+  # ── Microsserviços ────────────────────────────────────────────────────────
+  auth-service:
+    <<: *service-defaults
+    container_name: erp_auth
+    image: ${CI_REGISTRY_IMAGE:-erp-local}/backend/auth-service:${IMAGE_TAG:-latest}
+    environment:
+      DB_HOST: postgres-auth
+      DB_NAME: auth_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/api/auth/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   rabbitmq_data:
   postgres_auth_data:
