@@ -92,6 +92,11 @@ def me(request):
     }, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request={'type': 'object', 'properties': {'refresh': {'type': 'string'}}, 'required': ['refresh']},
+    responses={204: None},
+    description='Invalida o refresh token. Requer autenticação Bearer.',
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
