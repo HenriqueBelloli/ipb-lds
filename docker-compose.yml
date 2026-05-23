@@ -43,5 +43,94 @@ services:
       retries: 10
       start_period: 60s
 
+  # ── Bases de dados ────────────────────────────────────────────────────────
+  postgres-auth:
+    <<: *postgres-defaults
+    container_name: erp_db_auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+
+  postgres-usuario:
+    <<: *postgres-defaults
+    container_name: erp_db_usuario
+    environment:
+      POSTGRES_DB: usuario_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_usuario_data:/var/lib/postgresql/data
+
+  postgres-cliente:
+    <<: *postgres-defaults
+    container_name: erp_db_cliente
+    environment:
+      POSTGRES_DB: cliente_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_cliente_data:/var/lib/postgresql/data
+
+  postgres-servico:
+    <<: *postgres-defaults
+    container_name: erp_db_servico
+    environment:
+      POSTGRES_DB: servico_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_servico_data:/var/lib/postgresql/data
+
+  postgres-os:
+    <<: *postgres-defaults
+    container_name: erp_db_os
+    environment:
+      POSTGRES_DB: os_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_os_data:/var/lib/postgresql/data
+
+  postgres-financeiro:
+    <<: *postgres-defaults
+    container_name: erp_db_financeiro
+    environment:
+      POSTGRES_DB: financeiro_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_financeiro_data:/var/lib/postgresql/data
+
+  postgres-conciliacao:
+    <<: *postgres-defaults
+    container_name: erp_db_conciliacao
+    environment:
+      POSTGRES_DB: conciliacao_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_conciliacao_data:/var/lib/postgresql/data
+
+  postgres-notification:
+    <<: *postgres-defaults
+    container_name: erp_db_notification
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+
 volumes:
   rabbitmq_data:
+  postgres_auth_data:
+  postgres_usuario_data:
+  postgres_cliente_data:
+  postgres_servico_data:
+  postgres_os_data:
+  postgres_financeiro_data:
+  postgres_conciliacao_data:
+  postgres_notification_data:
