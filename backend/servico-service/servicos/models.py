@@ -10,24 +10,26 @@ class Servico(models.Model):
     ativo = models.BooleanField(default=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'servicos'
+        ordering = ['nome']
+
     def __str__(self):
         return self.nome
     
 class ServicoDelegacao(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    servicoId = models.ForeignKey(Servico, on_delete=models.CASCADE, related_name='delegacoes')
+    servicoId = models.ForeignKey(Servico, on_delete=models.CASCADE, db_column='servicoId', related_name='delegacoes')
     delegacaoId = models.UUIDField() # Referencia externa (apenas o UUID, não gera FK física)
     precoAssociado = models.DecimalField(max_digits=10, decimal_places=2)
     precoNaoAssociado = models.DecimalField(max_digits=10, decimal_places=2)
-    percentualEntrada = models.DecimalField(max_digits=5,
-                                            decimal_places=2,
-                                            default=0,
-                                            validators=[validar_percentual_entrada])
+    percentualEntrada = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     ativo = models.BooleanField(default=True)
     createdAt = models.DateTimeField(auto_now_add=True)
+
     class Meta:
-        unique_together = ['servicoId', 'delegacaoId']
+        db_table = 'servicos_delegacoes'
+        unique_together = ['servicoId__nome']
 
     def __str__(self):
-        return f'{self.servicoId.nome} - Delegação {self.delegacaoId}'
-
+        return f'{self.servicoId.nome} -> Delegação {self.delegacaoId}'
