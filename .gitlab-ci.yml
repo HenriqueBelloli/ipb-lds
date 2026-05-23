@@ -1,0 +1,39 @@
+stages:
+  - build
+  - push
+  - deploy-develop
+  - deploy-staging
+  - deploy-production
+
+.on-deploy-branches:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+# ── Build ──────────────────────────────────────────────────────────────────────
+
+.build:
+  stage: build
+  image: docker:26
+  tags:
+    - docker
+  services:
+    - docker:26-dind
+  variables:
+    IMAGE_PATH: backend/$SERVICE
+    DOCKERFILE: ./backend/$SERVICE/Dockerfile
+    BUILD_CONTEXT: ./backend/$SERVICE
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" -f $DOCKERFILE $BUILD_CONTEXT
+    - mkdir -p image-artifacts
+    - docker save "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" | gzip > "image-artifacts/$SERVICE.tar.gz"
+  artifacts:
+    paths:
+      - image-artifacts/
+    expire_in: 1 hour
+
+build-auth:
+  extends: [.build, .on-deploy-branches]
+  variables:
+    SERVICE: auth_service
