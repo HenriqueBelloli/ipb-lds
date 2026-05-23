@@ -1,9 +1,10 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
+#from rest_framework.permissions import IsAuthenticated
 # from django.shortcuts import render
 from .models import Servico, ServicoDelegacao
 from .serializers import ServicoSerializer, ServicoDelegacaoSerializer
-from shared.auth_middleware.permissions import IsAdministrador, IsGestor
+# from shared.auth_middleware.permissions import IsAdministrador, IsGestor
 
 class ServicoListCreateView(generics.ListAPIView):
     serializer_class = ServicoSerializer
@@ -31,7 +32,7 @@ class ServicoListCreateView(generics.ListAPIView):
 
         return queryset.order_by('nome')
 
-class SservicoDetailView(generics.RetrieveUpdateAPIView):
+class ServicoDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ServicoSerializer
     queryset = Servico.objects.all()
 

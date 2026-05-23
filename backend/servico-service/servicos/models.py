@@ -29,7 +29,7 @@ class ServicoDelegacao(models.Model):
 
     class Meta:
         db_table = 'servicos_delegacoes'
-        unique_together = ['servicoId__nome']
+        unique_together = ('delegacaoId', 'servicoId')
 
     def __str__(self):
         return f'{self.servicoId.nome} -> Delegação {self.delegacaoId}'
