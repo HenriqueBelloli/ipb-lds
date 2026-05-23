@@ -18,4 +18,3 @@ class ContasReceberListSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = ['id', 'createdAt']
-

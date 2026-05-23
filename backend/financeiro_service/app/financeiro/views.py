@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import BasePermission, AllowAny
 from .serializers import *
 from rest_framework import status
+from .services.faturacao_service import FaturacaoService
+from django.core.exceptions import ValidationError
 
 # Create your views here.
 
@@ -68,8 +70,29 @@ class ContasReceberDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
         
 
-class ContasReceberUpdateView(APIView):
-    pass
+class ContasReceberFaturarView(APIView):
+    
+    permission_classes = [AllowAny]
+
+    def _get_object(self, pk):
+        return get_object_or_404(ContaReceber, pk=pk)
+    
+    def patch(self, request, pk):
+        conta = self._get_object(pk)
+        id = conta.id
+
+        try:
+            saldo_final = FaturacaoService.faturar(id)
+        except ValidationError as e:
+            return Response(
+                data = {'message': e.message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ContasReceberListSerializer(saldo_final)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+     
+
 
 class ContasReceberVerifyEntradaView(APIView):
     pass
