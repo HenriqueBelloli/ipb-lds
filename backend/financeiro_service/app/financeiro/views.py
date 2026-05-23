@@ -7,6 +7,7 @@ from .serializers import *
 from rest_framework import status
 from .services.faturacao_service import FaturacaoService
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 # Create your views here.
 
@@ -92,6 +93,22 @@ class ContasReceberFaturarView(APIView):
         serializer = ContasReceberListSerializer(saldo_final)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
      
+
+class ClienteInadimplenteView(APIView):
+    
+    def get(self, request, clienteId):
+        hoje = timezone.now().date()
+
+        inadimplente = ContaReceber.objects.filter(
+            clienteId=clienteId,
+            tipo='MENSALIDADE',
+            status__in=['ABERTA', 'VENCIDA'],
+            dataVencimento__year=hoje.year,
+            dataVencimento__month=hoje.month
+        ).exists()
+
+        return Response({'inadimplente': inadimplente})
+
 
 
 class ContasReceberVerifyEntradaView(APIView):
