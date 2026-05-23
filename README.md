@@ -40,7 +40,7 @@ http://localhost:8001/api/docs/
 **Login de teste:**
 ```bash
 # Primeiro criar uma credencial
-docker exec erp_auth python manage.py shell
+docker exec ldsgrupo1_auth python manage.py shell
 ```
 
 ```python
@@ -122,13 +122,13 @@ docker-compose.yml              (orquestra tudo - infra + serviços)
 
 ```bash
 # Ver logs do auth-service
-docker logs -f erp_auth
+docker logs -f ldsgrupo1_auth
 
 # Ver logs do usuario-service
 docker logs -f usuario-service
 
 # Entrar no shell Django
-docker exec erp_auth python manage.py shell
+docker exec ldsgrupo1_auth python manage.py shell
 
 # Parar tudo
 docker-compose down
