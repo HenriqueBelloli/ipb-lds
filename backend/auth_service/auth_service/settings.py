@@ -71,6 +71,17 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Auth Service API',
     'DESCRIPTION': 'Serviço de autenticação e emissão de tokens JWT',
     'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SECURITY': [{'BearerAuth': []}],
+    'COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
 }
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
