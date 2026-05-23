@@ -13,10 +13,7 @@ from django.utils import timezone
 
 class ContasReceberListView(APIView):
 
-    #GET /api/financeiro/contas-receber/ - FINANCEIRO
-    #GET .../contas-receber/{id} - FINANCEIRO
-    #PATCH .../contas-receber/{id}/faturar/ - FINANCEIRO
-    #GET .../contas-receber/entrada-paga/{osId} - Interno
+    #perfil minimo = financeiro
     
     permission_classes = [AllowAny]
 
@@ -58,7 +55,7 @@ class ContasReceberListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ContasReceberDetailView(APIView):
-    
+    #perfil minimo = financeiro
     permission_classes = [AllowAny]
 
     def _get_object(self, pk):
@@ -72,7 +69,7 @@ class ContasReceberDetailView(APIView):
         
 
 class ContasReceberFaturarView(APIView):
-    
+    #perfil minimo = financeiro
     permission_classes = [AllowAny]
 
     def _get_object(self, pk):
@@ -95,7 +92,7 @@ class ContasReceberFaturarView(APIView):
      
 
 class ClienteInadimplenteView(APIView):
-    
+    #perfil minimo = Interno
     def get(self, request, clienteId):
         hoje = timezone.now().date()
 
@@ -107,11 +104,27 @@ class ClienteInadimplenteView(APIView):
             dataVencimento__month=hoje.month
         ).exists()
 
-        return Response({'inadimplente': inadimplente})
+        return Response({'inadimplente': inadimplente}, status=status.HTTP_200_OK)
 
 
+class VerificarEntradaPagaView(APIView):
+    #perfil minimo = interno
 
-class ContasReceberVerifyEntradaView(APIView):
-    pass
+    def _get_object(self, osId) -> ContaReceber:
+        return get_object_or_404(
+            ContaReceber,
+            ordemServicoId = osId,
+            tipo = 'ENTRADA'
+        )
+
+    def get(self, request, osId):
+        
+        conta = self._get_object(osId)
+
+        entrada_paga = conta.status == 'PAGA'
+
+        return Response({'Entrada paga':entrada_paga}, status=status.HTTP_200_OK)
+
+
 
 
