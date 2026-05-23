@@ -7,11 +7,10 @@ Sistema ERP Web centralizado para associação agrícola com 9 delegações regi
 ### 1. Preparar ambiente
 
 ```bash
-# No Windows PowerShell ou bash
-bash setup.sh
+cp .env.example .env
 ```
 
-Isto cria os ficheiros `.env` necessários a partir dos templates.
+O `.env` na raiz é partilhado por todos os serviços. As únicas variáveis que diferem por serviço (`DB_HOST`, `DB_NAME`) são injetadas diretamente no `docker-compose.yml`.
 
 ### 2. Subir containers
 
@@ -134,6 +133,35 @@ docker exec erp_auth python manage.py shell
 # Parar tudo
 docker-compose down
 ```
+
+## CI/CD — Pipeline GitLab
+
+O pipeline está definido em `.gitlab-ci.yml` e tem 5 stages: `build → push → deploy-develop → deploy-staging → deploy-production`.
+
+### Variáveis obrigatórias no GitLab
+
+Configurar em **Settings → CI/CD → Variables** antes de executar o pipeline:
+
+| Variável | Tipo | Descrição |
+|----------|------|-----------|
+| `SSH_PRIVATE_KEY` | Variable (Protected) | Chave privada SSH para acesso à VM |
+| `SSH_HOST` | Variable | Endereço IP da VM de deploy |
+| `SSH_USER` | Variable | Utilizador SSH (ex: `ubuntu`) |
+| `DEVELOP_ENV` | File | Conteúdo do `.env` para o ambiente develop |
+| `STAGING_ENV` | File | Conteúdo do `.env` para o ambiente staging |
+| `PRODUCTION_ENV` | File | Conteúdo do `.env` para o ambiente de produção |
+
+> As variáveis `CI_REGISTRY`, `CI_REGISTRY_USER`, `CI_REGISTRY_PASSWORD` e `CI_REGISTRY_IMAGE` são preenchidas automaticamente pelo GitLab.
+
+### Branches e ambientes
+
+| Branch | Deploy automático | Ambiente |
+|--------|-------------------|----------|
+| `develop` | Sim | `/opt/erp/develop` na VM |
+| `staging` | Sim | `/opt/erp/staging` na VM |
+| `main` | Manual (aprovação) | `/opt/erp/production` na VM |
+
+---
 
 ## Git Workflow
 
