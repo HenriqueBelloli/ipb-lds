@@ -18,7 +18,7 @@ STATUS_CHOICES = [
 class ContaReceber(models.Model):
 
     id = models.UUIDField(primary_key=True, auto_created=True, default=uuid.uuid4, editable=False)
-    clienteId = models.UUIDField(),
+    clienteId = models.UUIDField()
     ordemServicoId = models.UUIDField(null=True, editable=True)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
