@@ -7,6 +7,7 @@ from .serializers import *
 from rest_framework import status
 from .services.faturacao_service import FaturacaoService
 from .services.pagamento_service import PagamentoService
+from .services.mensalidade_service import MensalidadeService
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import date
@@ -220,6 +221,24 @@ class MensalidadeDetailPutView(APIView):
         serializer = MensalidadeViewSerializer(mensalidade)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GerarMensalidadesView(APIView):
+
+    def post(self, request):
+        
+        try:
+            res = MensalidadeService.gerar_mensalidades()
+        except ValueError as e:
+            return Response(
+                data=e.message,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+        return Response(
+            data=res,
+            status=status.HTTP_201_CREATED
+        )
 
 
 

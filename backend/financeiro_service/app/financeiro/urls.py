@@ -9,7 +9,8 @@ from .views import (
     VerificarPagamentosOSView,
     RegistrarPagamentoView,
     PagamentoDetailView,
-    MensalidadeDetailPutView
+    MensalidadeDetailPutView,
+    GerarMensalidadesView
 )
 
 urlpatterns = [
@@ -30,6 +31,6 @@ urlpatterns = [
 
     #mensalidade
     path('financeiro/mensalidades/configuracao/', MensalidadeDetailPutView.as_view()),
-
+    path('financeiro/mensalidades/gerar/', GerarMensalidadesView.as_view()),
 
 ]

@@ -63,5 +63,16 @@ def publish_pagamento_confirmado(conta : ContaReceber):
     )
 
     return 
-    
+
+def publish_mensalidades_geradas(mesReferencia, totalGeradas, totalIgnoradas):
+
+    publish(
+        exchange = 'financeiro',
+        routing_key = 'financeiro.mensalidades.geradas',
+        body = {
+            'mesReferencia' : mesReferencia,
+            'totalGeradas' : totalGeradas,
+            'totalIgnoradas' : totalIgnoradas
+        }
+    )
 
