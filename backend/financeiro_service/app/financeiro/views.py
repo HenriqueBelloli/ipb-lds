@@ -30,6 +30,7 @@ class ContasReceberListView(APIView):
         _status = request.query_params.get('status')
         dataVencimento = request.query_params.get('dataVencimento')
 
+        #Tem que ter dataVencimentoDe e dataVencimentoAte (in)
 
         if cliente_id:
             qs = qs.filter(cliente_id = cliente_id)
@@ -162,7 +163,22 @@ class RegistrarPagamentoView(APIView):
         serializer = PagamentoConfirmadoCreateSerializer(pagamento)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class PagamentoDetailView(APIView):
+
+    def _get_object(self, pagamentoId):
+        return get_object_or_404(Pagamento,
+                                 id = pagamentoId)
     
+    def get(self, request, pagamentoId):
+
+        pagamento = self._get_object(pagamentoId)
+        
+        serializer = PagamentoViewSerializer(pagamento)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        
 
 
 

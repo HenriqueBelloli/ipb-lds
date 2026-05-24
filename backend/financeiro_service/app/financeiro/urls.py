@@ -7,7 +7,8 @@ from .views import (
     ClienteInadimplenteView,
     VerificarEntradaPagaView,
     VerificarPagamentosOSView,
-    RegistrarPagamentoView
+    RegistrarPagamentoView,
+    PagamentoDetailView
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     #pagamentos
     path('financeiro/pagamentos/os/<uuid:osId>/', VerificarPagamentosOSView.as_view()),
     path('financeiro/pagamentos/', RegistrarPagamentoView.as_view()),
-
+    path('financeiro/pagamentos/<uuid:pagamentoId>/', PagamentoDetailView.as_view()),
+    
 
 ]
