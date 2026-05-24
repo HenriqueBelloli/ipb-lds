@@ -10,6 +10,7 @@ from .services.pagamento_service import PagamentoService
 from .services.mensalidade_service import MensalidadeService
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from datetime import datetime
 from datetime import date
 import uuid
 
@@ -21,6 +22,9 @@ class ContasReceberListView(APIView):
     
     permission_classes = [AllowAny]
 
+    def _convert_date(self, input_date):
+        return datetime.strptime(input_date, "%Y%m%d").date()
+
     def get(self, request):
         qs = ContaReceber.objects.all()
 
@@ -30,7 +34,10 @@ class ContasReceberListView(APIView):
         valor = request.query_params.get('valor')
         valorPago = request.query_params.get('valorPago')
         _status = request.query_params.get('status')
-        dataVencimento = request.query_params.get('dataVencimento')
+
+        #Considerar que as datas devem vir num formato YYYYMMDD
+        dataVencimentoDe = request.query_params.get('dataVencimentoDe')
+        dataVencimentoAte = request.query_params.get('dataVencimentoAte')
 
         #Tem que ter dataVencimentoDe e dataVencimentoAte (in)
 
@@ -51,10 +58,16 @@ class ContasReceberListView(APIView):
 
         if _status:
             qs = qs.filter(status = _status)
+
+        if dataVencimentoDe and dataVencimentoAte:
+            qs = qs.filter(dataVencimento__range = (self._convert_date(dataVencimentoDe), self._convert_date(dataVencimentoAte)))
         
-        if dataVencimento:
-            qs = qs.filter(dataVencimento = dataVencimento)
-        
+        elif dataVencimentoDe:
+            qs = qs.filter(dataVencimento__gte = self._convert_date(dataVencimentoDe))
+
+        elif dataVencimentoAte:
+            qs = qs.filter(dataVencimento__lte = self._convert_date(dataVencimentoAte)) 
+
         serializer = ContasReceberListSerializer(qs, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
