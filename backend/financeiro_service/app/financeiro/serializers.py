@@ -17,4 +17,26 @@ class ContasReceberListSerializer(serializers.ModelSerializer):
             'createdAt'
         ]
 
-        read_only_fields = ['id', 'createdAt']
+        read_only_fields = [
+            'id', 
+            'createdAt'
+        ]
+
+class PagamentoConfirmadoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pagamento
+
+        fields = [
+            'id',
+            'contaReceberId',
+            'usuarioId',
+            'valor',
+            'data',
+            'referenciaBancaria',
+            'createdAt'
+        ]
+
+        read_only_fields = [
+            'id',
+            'createdAt'
+        ]

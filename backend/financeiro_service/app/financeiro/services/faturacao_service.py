@@ -31,6 +31,10 @@ class FaturacaoService:
                 'Esta OS já foi faturada anteriormente.'
             )
         
+        """Precisa verificar se existe uma ContaReceber
+        da mesma OS com o tipo ENTRADA para reduzir o valor
+        do saldo final"""
+        
         #Gerar ContaReceber de saldo final
         saldo_final = ContaReceber.objects.create(
             clienteId = conta.clienteId,

@@ -6,8 +6,10 @@ from rest_framework.permissions import BasePermission, AllowAny
 from .serializers import *
 from rest_framework import status
 from .services.faturacao_service import FaturacaoService
+from .services.pagamento_service import PagamentoService
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from datetime import date
 
 # Create your views here.
 
@@ -57,6 +59,8 @@ class ContasReceberListView(APIView):
 class ContasReceberDetailView(APIView):
     #perfil minimo = financeiro
     permission_classes = [AllowAny]
+
+    #arrumar a lógica do faturacao_service
 
     def _get_object(self, pk):
         return get_object_or_404(ContaReceber, pk=pk)
@@ -124,6 +128,46 @@ class VerificarEntradaPagaView(APIView):
         entrada_paga = conta.status == 'PAGA'
 
         return Response({'Entrada paga':entrada_paga}, status=status.HTTP_200_OK)
+
+class VerificarPagamentosOSView(APIView):
+    #perfil minimo = interno
+
+    def get(self, request, osId):
+        qs = ContaReceber.objects.filter(
+            ordemServicoId = osId
+        )
+
+        serializer = ContasReceberListSerializer(qs, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RegistrarPagamentoView(APIView):
+    #perfil minimo = financeiro
+
+    def post(self, request):
+
+        conta_id = request.data.get('id')
+        valor = request.data.get('valor')
+        data = date.today()
+        referencia = request.data.get('referenciaBancaria')
+        usuario_id = request.data.get('usuarioId')
+
+        try:
+            pagamento = PagamentoService.registrar(conta_id, valor, data, referencia, usuario_id)
+        except ValidationError as e:
+            
+            return Response(e.message, status=status.HTTP_400_BAD_REQUEST)
+
+
+        serializer = PagamentoConfirmadoCreateSerializer(pagamento)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+
+
+
+
 
 
 
