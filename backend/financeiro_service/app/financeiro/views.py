@@ -10,6 +10,7 @@ from .services.pagamento_service import PagamentoService
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import date
+import uuid
 
 # Create your views here.
 
@@ -179,22 +180,49 @@ class PagamentoDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class MensalidadeDetailView(APIView):
+class MensalidadeDetailPutView(APIView):
+    # como CHAVE é unique só terá um VALOR_MENSALIDADE
+    #dentro de ConfiguracaoFinanceira
+
+    def _get_object(self, chave) -> ConfiguracaoFinanceira:
+        return get_object_or_404(
+            ConfiguracaoFinanceira,
+            chave=chave
+        )
 
     def get(self, request):
 
-        qs = ConfiguracaoFinanceira.objects.filter(
-            chave = "VALOR_MENSALIDADE"
-        )
+        mensalidade = self._get_object(chave="VALOR_MENSALIDADE")
 
-        if qs:
-            serializer = MensalidadeViewSerializer(qs, many=True)
+        serializer = MensalidadeViewSerializer(mensalidade)
 
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        return Response(data={
-            "mensagem":"Não existem configuracoes de mensalidade"
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+       
+    
+    def put(self, request):
+
+        novo_valor = request.data.get('valor')
+        usuario_modificou = uuid.UUID(request.data.get('usuarioId'))
+
+        mensalidade = self._get_object(chave="VALOR_MENSALIDADE")
+
+        if novo_valor == mensalidade.valor:
+            return Response(data={
+                "message": "O novo valor para a mensalidade é igual ao valor antigo"
+            }, status=status.HTTP_409_CONFLICT)
+
+        mensalidade.valor = novo_valor
+        mensalidade.atualizadoEm = timezone.now()
+        mensalidade.usuarioId = usuario_modificou
+
+        mensalidade.save(update_fields=["valor", "atualizadoEm", "usuarioId"])
+
+        serializer = MensalidadeViewSerializer(mensalidade)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
     
 
 

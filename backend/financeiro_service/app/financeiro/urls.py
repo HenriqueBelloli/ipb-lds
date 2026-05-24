@@ -9,7 +9,7 @@ from .views import (
     VerificarPagamentosOSView,
     RegistrarPagamentoView,
     PagamentoDetailView,
-    MensalidadeDetailView
+    MensalidadeDetailPutView
 )
 
 urlpatterns = [
@@ -29,7 +29,7 @@ urlpatterns = [
     path('financeiro/pagamentos/<uuid:pagamentoId>/', PagamentoDetailView.as_view()),
 
     #mensalidade
-    path('financeiro/mensalidades/configuracao/', MensalidadeDetailView.as_view()),
-    
+    path('financeiro/mensalidades/configuracao/', MensalidadeDetailPutView.as_view()),
+
 
 ]
