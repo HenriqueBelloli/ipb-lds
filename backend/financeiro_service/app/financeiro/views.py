@@ -13,6 +13,7 @@ from django.utils import timezone
 from datetime import datetime
 from datetime import date
 import uuid
+from drf_spectacular.utils import extend_schema
 
 # Create your views here.
 
@@ -25,6 +26,10 @@ class ContasReceberListView(APIView):
     def _convert_date(self, input_date):
         return datetime.strptime(input_date, "%Y%m%d").date()
 
+
+    @extend_schema(
+            responses=ContasReceberListSerializer(many=True)
+    )
     def get(self, request):
         qs = ContaReceber.objects.all()
 
@@ -81,6 +86,12 @@ class ContasReceberDetailView(APIView):
     def _get_object(self, pk):
         return get_object_or_404(ContaReceber, pk=pk)
 
+    @extend_schema(
+            responses={
+                200: ContasReceberListSerializer(many=False),
+                404: ContasReceberDetailErrorSerializer
+                }
+    )
     def get(self, request, pk):
         conta = self._get_object(pk)
         serializer = ContasReceberListSerializer(conta, many=False)
@@ -95,6 +106,13 @@ class ContasReceberFaturarView(APIView):
     def _get_object(self, pk):
         return get_object_or_404(ContaReceber, pk=pk)
     
+    @extend_schema(
+            request=ContasReceberFaturarInputSerializer,
+            responses={
+                201: ContasReceberListSerializer,
+                400: ContasReceberErrorFaturarSerializer
+                }
+    )
     def patch(self, request, pk):
         conta = self._get_object(pk)
         id = conta.id
@@ -103,7 +121,7 @@ class ContasReceberFaturarView(APIView):
             saldo_final = FaturacaoService.faturar(id)
         except ValidationError as e:
             return Response(
-                data = {'message': e.message},
+                data = {'message': e.message}, #e.message funciona
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -113,6 +131,10 @@ class ContasReceberFaturarView(APIView):
 
 class ClienteInadimplenteView(APIView):
     #perfil minimo = Interno
+
+    @extend_schema(
+            responses=ClienteInadimplenteSerializer
+    )
     def get(self, request, clienteId):
         hoje = timezone.now().date()
 
@@ -137,6 +159,9 @@ class VerificarEntradaPagaView(APIView):
             tipo = 'ENTRADA'
         )
 
+    @extend_schema(
+            responses=VerificarEntradaPagaSerializer
+    )
     def get(self, request, osId):
         
         conta = self._get_object(osId)
@@ -148,6 +173,9 @@ class VerificarEntradaPagaView(APIView):
 class VerificarPagamentosOSView(APIView):
     #perfil minimo = interno
 
+    @extend_schema(
+            responses = ContasReceberListSerializer(many=True)
+    )
     def get(self, request, osId):
         qs = ContaReceber.objects.filter(
             ordemServicoId = osId
@@ -160,6 +188,13 @@ class VerificarPagamentosOSView(APIView):
 class RegistrarPagamentoView(APIView):
     #perfil minimo = financeiro
 
+    @extend_schema(
+            request = PagamentoConfirmadoCreateSerializer,
+            responses = {
+                201: PagamentoConfirmadoCreateSerializer,
+                400: RegistrarPagamentoErrorSerializer
+                }
+    )
     def post(self, request):
 
         conta_id = request.data.get('id')
@@ -185,6 +220,12 @@ class PagamentoDetailView(APIView):
         return get_object_or_404(Pagamento,
                                  id = pagamentoId)
     
+    @extend_schema(
+            responses = {
+                200: PagamentoViewSerializer,
+                400: PagamentoDetailErrorSerializer
+                }
+    )
     def get(self, request, pagamentoId):
 
         pagamento = self._get_object(pagamentoId)
@@ -204,6 +245,9 @@ class MensalidadeDetailPutView(APIView):
             chave=chave
         )
 
+    @extend_schema(
+            responses = MensalidadeViewSerializer(many=False)
+    )
     def get(self, request):
 
         mensalidade = self._get_object(chave="VALOR_MENSALIDADE")
@@ -213,6 +257,13 @@ class MensalidadeDetailPutView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
        
     
+    @extend_schema(
+            request = MensalidadeViewEntrySerializer,
+            responses = {
+                200: MensalidadeViewSerializer,
+                409: MensalidadePutErrorSerializer
+                }
+    )
     def put(self, request):
 
         novo_valor = request.data.get('valor')
@@ -237,6 +288,13 @@ class MensalidadeDetailPutView(APIView):
 
 class GerarMensalidadesView(APIView):
 
+    @extend_schema(
+            request=None,
+            responses={
+                201: GerarMensalidadesSerializer,
+                400: GerarMensalidadesErrorSerializer
+                }
+    )
     def post(self, request):
         
         try:

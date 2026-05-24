@@ -22,6 +22,18 @@ class ContasReceberListSerializer(serializers.ModelSerializer):
             'createdAt'
         ]
 
+class ContasReceberDetailErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class ContasReceberErrorFaturarSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class ContasReceberFaturarInputSerializer(serializers.Serializer):
+    pk = serializers.UUIDField()
+
+class ClienteInadimplenteSerializer(serializers.Serializer):
+    inadimplente = serializers.BooleanField()
+
 class PagamentoConfirmadoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pagamento
@@ -60,6 +72,15 @@ class PagamentoViewSerializer(serializers.ModelSerializer):
             'createdAt'
         ]
 
+class PagamentoDetailErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class RegistrarPagamentoErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class VerificarEntradaPagaSerializer(serializers.Serializer):
+    entrada_paga = serializers.BooleanField()
+
 class MensalidadeViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracaoFinanceira
@@ -77,3 +98,17 @@ class MensalidadeViewSerializer(serializers.ModelSerializer):
             'atualizadoEm',
             'usuarioId'
         ]
+
+class MensalidadePutErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class MensalidadeViewEntrySerializer(serializers.Serializer):
+    valor = serializers.FloatField()
+    usuarioId = serializers.UUIDField()
+
+class GerarMensalidadesSerializer(serializers.Serializer):
+    geradas = serializers.IntegerField()
+    ignoradas = serializers.IntegerField()
+
+class GerarMensalidadesErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()

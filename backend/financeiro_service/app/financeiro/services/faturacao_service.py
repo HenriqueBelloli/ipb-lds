@@ -33,14 +33,24 @@ class FaturacaoService:
         
         """Precisa verificar se existe uma ContaReceber
         da mesma OS com o tipo ENTRADA para reduzir o valor
-        do saldo final"""
+        do saldo final
+        
+        !!!Verificar se essa lógica está correta!!!
+        """
+
+        entrada = ContaReceber.objects.filter(
+            ordemServicoId = conta.ordemServicoId,
+            tipo = 'ENTRADA'
+        ).first()
+
+        valor_entrada = entrada.valor if entrada else 0
         
         #Gerar ContaReceber de saldo final
         saldo_final = ContaReceber.objects.create(
             clienteId = conta.clienteId,
             ordemServicoId = conta.ordemServicoId,
             tipo = 'SALDO_FINAL',
-            valor = conta.valor - conta.valorPago,
+            valor = conta.valor - valor_entrada,
             status = 'ABERTA',
             dataVencimento = _calcular_data_vencimento()
         )
