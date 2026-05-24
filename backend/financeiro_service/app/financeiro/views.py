@@ -178,6 +178,26 @@ class PagamentoDetailView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class MensalidadeDetailView(APIView):
+
+    def get(self, request):
+
+        qs = ConfiguracaoFinanceira.objects.filter(
+            chave = "VALOR_MENSALIDADE"
+        )
+
+        if qs:
+            serializer = MensalidadeViewSerializer(qs, many=True)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(data={
+            "mensagem":"Não existem configuracoes de mensalidade"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+
+
         
 
 

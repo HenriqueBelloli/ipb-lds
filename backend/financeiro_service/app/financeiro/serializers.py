@@ -59,3 +59,21 @@ class PagamentoViewSerializer(serializers.ModelSerializer):
             'id',
             'createdAt'
         ]
+
+class MensalidadeViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfiguracaoFinanceira
+
+        fields = [
+            'id',
+            'chave',
+            'valor',
+            'atualizadoEm',
+            'usuarioId'
+        ]
+
+        read_only_fields = [
+            'id',
+            'atualizadoEm',
+            'usuarioId'
+        ]
