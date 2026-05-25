@@ -4,11 +4,20 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Notificacao
 from .serializers import *
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 
 # Create your views here.
 
 class NotificationListView(APIView):
 
+    @extend_schema(
+            operation_id="listar_notificacoes",
+            request=None,
+            responses={
+                200: NotificationListSerializer
+            }
+    )
     def get(self, request):
         qs = Notificacao.objects.all()
 
@@ -36,4 +45,27 @@ class NotificationListView(APIView):
         serializer = NotificationListSerializer(qs, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class NotificationDetailView(APIView):
+
+    def _get_object(self, id):
+        return get_object_or_404(Notificacao,id=id)
+
+
+    @extend_schema(
+            operation_id="detalhar_notificacao",
+            request=None,
+            responses={
+                200: NotificationListSerializer,
+                404: NotificationDetailErrorSerializer
+            }
+    )
+    def get(self, request, id):
+
+        notificacao = self._get_object(id=id)
+
+        serializer = NotificationListSerializer(notificacao, many=False)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 

@@ -24,3 +24,6 @@ class NotificationListSerializer(serializers.ModelSerializer):
             'id',
             'createdAt'
         ]
+
+class NotificationDetailErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
