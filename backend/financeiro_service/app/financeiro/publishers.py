@@ -2,7 +2,7 @@ import json
 import os
 import pika
 
-from .models import ContaReceber, Pagamento
+from .models import ContaReceber
 
 def get_connection():
     credentials = pika.PlainCredentials(
