@@ -68,4 +68,60 @@ class NotificationDetailView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class NotificationMarkAsReadView(APIView):
 
+    def _get_object(self, id):
+        return get_object_or_404(Notificacao, id=id)
+    
+    @extend_schema(
+            operation_id="marcar_como_lida",
+            request=None,
+            responses={
+                200: NotificacaoMarkAsReadSerializer,
+                409: NotificacaoMarkAsReadErrorSerializer
+            }
+    )
+    def patch(self, request, id):
+
+        notificacao = self._get_object(id=id)
+
+        if notificacao.lida:
+            return Response(
+                data = {
+                    "message": "A notificação já se encontra marcada como lida."
+                },
+                status = status.HTTP_409_CONFLICT
+            )
+        
+        notificacao.lida = True
+
+        notificacao.save(update_fields=["lida"])
+
+        serializer = NotificacaoMarkAsReadSerializer(notificacao, many=False)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class NotificationMarkAllAsReadView(APIView):
+
+    @extend_schema(
+            operation_id="marcar_todas_como_lida",
+            request=None,
+            responses={
+                200: NotificationMarkAllAsReadSerializer
+            }
+
+    )
+    def patch(self, request):
+        qs = Notificacao.objects.filter(
+            lida = False
+        )
+
+        qs.update(
+            lida = True
+        )
+
+        qs_updated = Notificacao.objects.all()
+
+        serializer = NotificationMarkAllAsReadSerializer(qs_updated, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

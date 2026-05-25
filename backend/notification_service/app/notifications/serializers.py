@@ -27,3 +27,25 @@ class NotificationListSerializer(serializers.ModelSerializer):
 
 class NotificationDetailErrorSerializer(serializers.Serializer):
     message = serializers.CharField()
+
+class NotificacaoMarkAsReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notificacao
+
+        fields = [
+            'lida'
+        ]
+
+class NotificacaoMarkAsReadErrorSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class NotificationMarkAllAsReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notificacao
+
+        fields = [
+            'id',
+            'lida'
+        ]
+
+        read_only_fields = ['id']
