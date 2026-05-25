@@ -1,13 +1,63 @@
-version: '3.8'
-
 services:
-  backend:
+  mailhog:
+    container_name: erp_mailhog
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025 # SMTP - notification-service
+      - 8025:8025 # Interface web
+
+
+  notification-db:
+    container_name: notification-db
+    image: postgres:16
+    env_file:
+      - ./backend/notification_service/.env
+    ports:
+      - 5433:5432
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financeiro -d financeiro_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  notification-service:
+    container_name: notification-service
     build:
-      context: .
+      context: ./backend/notification_service 
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - 8009:8009
+    env_file:
+      - ./backend/notification_service/.env
+    environmnent:
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
     volumes:
-      - ./backend/auth_service:/app
+      - ./backend/notification_service/app:/app
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      - mailhog
+  
+  rabbitmq:
+    container_name: erp_rabbitmq
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
     environment:
-      - DJANGO_SETTINGS_MODULE=auth_service.settings
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  notification-db-data:
