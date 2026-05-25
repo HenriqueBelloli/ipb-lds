@@ -1,0 +1,117 @@
+{
+  "info": {
+    "_postman_id": "66e1b722-ed64-4189-8b53-dff9f3c25e97",
+    "name": "notification_service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51388238",
+    "_collection_link": "https://go.postman.co/collection/51388238-66e1b722-ed64-4189-8b53-dff9f3c25e97?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "ListarNotificacoes",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/notificacoes/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "notificacoes",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DetalheNotificacao",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/notificacoes/d712ae65-7462-4b39-b2dd-3356d5a42313/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "notificacoes",
+            "d712ae65-7462-4b39-b2dd-3356d5a42313",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "MarcarComoLidaNotificacao",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/notificacoes/d712ae65-7462-4b39-b2dd-3356d5a42313/ler/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "notificacoes",
+            "d712ae65-7462-4b39-b2dd-3356d5a42313",
+            "ler",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "MarcarTodasComoLida",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/notificacoes/ler-todas/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "notificacoes",
+            "ler-todas",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
