@@ -73,7 +73,7 @@ def start_consumer(
         callback,
         exchange = "events",
         exchange_type = "topic",
-        host = "localhost",
+        host = "rabbitmq",
         port = 5672,
         virtual_host = "/",
         username = "guest",

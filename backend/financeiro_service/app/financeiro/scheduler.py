@@ -1,6 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from django_apscheduler.jobstores import DjangoJobStore
-from services.mensalidade_service import MensalidadeService
+from .services.mensalidade_service import MensalidadeService
 
 def iniciar_scheduler():
     scheduler = BackgroundScheduler()

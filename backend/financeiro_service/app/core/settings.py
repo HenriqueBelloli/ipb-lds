@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'financeiro',
     'drf_spectacular',
+    'django_apscheduler',
 ]
 
 REST_FRAMEWORK = {
