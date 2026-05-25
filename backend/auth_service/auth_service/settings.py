@@ -44,7 +44,7 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'authentication.backends.CredencialJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -59,12 +59,14 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(
         days=int(os.environ.get('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 7))
     ),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    # Tokens são criados manualmente em _gerar_tokens() sem associação ao auth.User do Django.
+    # USER_ID_CLAIM fica no default ('user_id') para que OutstandingToken.user_id = None
+    # (campo nullable) ao fazer blacklist no logout — evita conflito UUID vs integer FK.
+    # A autenticação usa CredencialJWTAuthentication que lê o claim 'usuarioId' directamente.
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
     'SIGNING_KEY': os.environ.get('JWT_SECRET_KEY', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'usuarioId',
 }
 
 SPECTACULAR_SETTINGS = {
