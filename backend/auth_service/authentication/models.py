@@ -24,5 +24,10 @@ class Credencial(models.Model):
     class Meta:
         db_table = 'credenciais'
 
+    @property
+    def is_authenticated(self):
+        """Necessário para compatibilidade com rest_framework.permissions.IsAuthenticated."""
+        return True
+
     def __str__(self):
         return f'{self.email} ({self.perfil})'
