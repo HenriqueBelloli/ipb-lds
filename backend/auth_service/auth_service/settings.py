@@ -21,6 +21,11 @@ INSTALLED_APPS = [
     'authentication.apps.AuthenticationConfig',
 ]
 
+# Substitui auth.User pelo modelo Credencial como utilizador do sistema.
+# Necessário para que get_user_model() devolva Credencial e o simplejwt
+# faça o lookup nativo em Credencial.objects.get(usuarioId=<claim>).
+AUTH_USER_MODEL = 'authentication.Credencial'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -44,7 +49,7 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'authentication.backends.CredencialJWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -59,14 +64,15 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(
         days=int(os.environ.get('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 7))
     ),
-    # Tokens são criados manualmente em _gerar_tokens() sem associação ao auth.User do Django.
-    # USER_ID_CLAIM fica no default ('user_id') para que OutstandingToken.user_id = None
-    # (campo nullable) ao fazer blacklist no logout — evita conflito UUID vs integer FK.
-    # A autenticação usa CredencialJWTAuthentication que lê o claim 'usuarioId' directamente.
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'SIGNING_KEY': os.environ.get('JWT_SECRET_KEY', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    # USER_ID_FIELD aponta para o campo PK de Credencial (usuarioId).
+    # USER_ID_CLAIM é o nome do claim no JWT que contém esse valor.
+    # O simplejwt faz: Credencial.objects.get(usuarioId=token['usuarioId'])
+    'USER_ID_FIELD': 'usuarioId',
+    'USER_ID_CLAIM': 'usuarioId',
 }
 
 SPECTACULAR_SETTINGS = {
