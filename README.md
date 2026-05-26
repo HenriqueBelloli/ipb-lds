@@ -37,6 +37,18 @@ curl http://localhost:8001/api/auth/health/
 http://localhost:8001/api/docs/
 ```
 
+### 4. Testar usuario-service
+
+**Health check:**
+```bash
+curl http://localhost:8002/api/usuarios/health/
+```
+
+**Swagger docs:**
+```
+http://localhost:8002/api/docs/
+```
+
 **Login de teste:**
 ```bash
 # Primeiro criar uma credencial
