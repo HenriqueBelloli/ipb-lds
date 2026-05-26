@@ -1,0 +1,138 @@
+stages:
+  - build
+  - push
+  - deploy-develop
+  - deploy-staging
+  - deploy-production
+
+.on-deploy-branches:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+# ── Build ──────────────────────────────────────────────────────────────────────
+
+.build:
+  stage: build
+  image: docker:26
+  tags:
+    - docker
+  services:
+    - docker:26-dind
+  variables:
+    IMAGE_PATH: backend/$SERVICE
+    DOCKERFILE: ./backend/$SERVICE/Dockerfile
+    BUILD_CONTEXT: ./backend/$SERVICE
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" -f $DOCKERFILE $BUILD_CONTEXT
+    - mkdir -p image-artifacts
+    - docker save "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" | gzip > "image-artifacts/$SERVICE.tar.gz"
+  artifacts:
+    paths:
+      - image-artifacts/
+    expire_in: 1 hour
+
+build-auth:
+  extends: [.build, .on-deploy-branches]
+  variables:
+    SERVICE: auth_service
+
+# ── Push ───────────────────────────────────────────────────────────────────────
+
+.push:
+  stage: push
+  image: docker:26
+  tags:
+    - docker
+  services:
+    - docker:26-dind
+  variables:
+    IMAGE_PATH: backend/$SERVICE
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker load < "image-artifacts/$SERVICE.tar.gz"
+    - docker tag "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE/$IMAGE_PATH:latest"
+    - docker push "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE/$IMAGE_PATH:latest"
+
+push-auth:
+  extends: [.push, .on-deploy-branches]
+  variables:
+    SERVICE: auth_service
+  needs: [build-auth]
+
+# ── Deploy ─────────────────────────────────────────────────────────────────────
+# Variáveis necessárias em Settings → CI/CD → Variables:
+#   SSH_PRIVATE_KEY  — chave privada SSH (Protected, não pode ser Masked)
+#   SSH_HOST         — endereço IP da VM
+#   SSH_USER         — utilizador SSH (ex: ubuntu)
+#   DEVELOP_ENV      — tipo File, conteúdo do .env de develop
+#   STAGING_ENV      — tipo File, conteúdo do .env de staging
+#   PRODUCTION_ENV   — tipo File, conteúdo do .env de produção
+
+.deploy:
+  image: alpine:latest
+  tags:
+    - docker
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - cat "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+  script:
+    - ssh "$SSH_USER@$SSH_HOST" "mkdir -p $DEPLOY_PATH"
+    - scp "$ENV_FILE" "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
+    - scp docker-compose.yml "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/docker-compose.yml"
+    - scp -r reverse-proxy/ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/reverse-proxy"
+    - echo "$CI_REGISTRY_PASSWORD" | ssh "$SSH_USER@$SSH_HOST" "
+      set -e &&
+      cd $DEPLOY_PATH &&
+      docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY &&
+      export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE &&
+      export IMAGE_TAG=$CI_COMMIT_SHA &&
+      docker compose pull &&
+      docker compose down --remove-orphans &&
+      docker compose up -d"
+
+.deploy-needs: &deploy-needs
+  - { job: push-auth, optional: true }
+
+deploy-develop:
+  extends: .deploy
+  stage: deploy-develop
+  environment:
+    name: develop
+  variables:
+    DEPLOY_PATH: /opt/erp/develop
+    ENV_FILE: $DEVELOP_ENV
+  needs: *deploy-needs
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+deploy-staging:
+  extends: .deploy
+  stage: deploy-staging
+  environment:
+    name: staging
+  variables:
+    DEPLOY_PATH: /opt/erp/staging
+    ENV_FILE: $STAGING_ENV
+  needs: *deploy-needs
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+deploy-production:
+  extends: .deploy
+  stage: deploy-production
+  environment:
+    name: production
+  variables:
+    DEPLOY_PATH: /opt/erp/production
+    ENV_FILE: $PRODUCTION_ENV
+  needs: *deploy-needs
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual

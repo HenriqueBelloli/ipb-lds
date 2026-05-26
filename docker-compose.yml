@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 services:
 
   auditoria-db:
@@ -42,12 +43,215 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+=======
+x-postgres: &postgres-defaults
+  image: postgres:16-alpine
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d $$POSTGRES_DB"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+x-service: &service-defaults
+  restart: unless-stopped
+  env_file: .env
+  healthcheck:
+    test:
+      [
+        "CMD-SHELL",
+        "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')\"",
+      ]
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 90s
+
+services:
+  # ── Infraestrutura ────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ldsgrupo1_rabbitmq
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+>>>>>>> origin/develop
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
+<<<<<<< HEAD
       retries: 5
 
 
 volumes:
   auditoria-db-data:
+=======
+      retries: 10
+      start_period: 60s
+
+  # ── Bases de dados ────────────────────────────────────────────────────────
+  postgres-auth:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+
+  postgres-usuario:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_usuario
+    environment:
+      POSTGRES_DB: usuario_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_usuario_data:/var/lib/postgresql/data
+
+  postgres-cliente:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_cliente
+    environment:
+      POSTGRES_DB: cliente_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_cliente_data:/var/lib/postgresql/data
+
+  postgres-servico:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_servico
+    environment:
+      POSTGRES_DB: servico_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_servico_data:/var/lib/postgresql/data
+
+  postgres-os:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_os
+    environment:
+      POSTGRES_DB: os_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_os_data:/var/lib/postgresql/data
+
+  postgres-financeiro:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_financeiro
+    environment:
+      POSTGRES_DB: financeiro_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_financeiro_data:/var/lib/postgresql/data
+
+  postgres-conciliacao:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_conciliacao
+    environment:
+      POSTGRES_DB: conciliacao_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_conciliacao_data:/var/lib/postgresql/data
+
+  postgres-notification:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_notification
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+
+  # ── Microsserviços ────────────────────────────────────────────────────────
+  auth-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_auth
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/auth-service:${IMAGE_TAG:-latest}
+    environment:
+      DB_HOST: postgres-auth
+      DB_NAME: auth_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/api/auth/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  cliente-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_cliente
+    build:
+      context: ./backend
+      dockerfile: cliente_service/Dockerfile
+    environment:
+      DB_HOST: postgres-cliente
+      DB_NAME: cliente_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/api/clientes/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres-cliente:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ── Reverse proxy ─────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ldsgrupo1_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./reverse-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth-service:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:
+  postgres_auth_data:
+  postgres_usuario_data:
+  postgres_cliente_data:
+  postgres_servico_data:
+  postgres_os_data:
+  postgres_financeiro_data:
+  postgres_conciliacao_data:
+  postgres_notification_data:
+>>>>>>> origin/develop
