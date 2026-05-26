@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "Auth Service — LDS Grupo 1",
+    "description": "Endpoints do serviço de autenticação (auth-service). Faça primeiro o request Login para os tokens serem guardados automaticamente nas variáveis de ambiente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/health/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "health", ""]
+        },
+        "description": "Verifica se o serviço está operacional. Não requer autenticação."
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json.access) {",
+              "    pm.environment.set('access_token', json.access);",
+              "    pm.environment.set('refresh_token', json.refresh);",
+              "    console.log('Tokens guardados nas variáveis de ambiente.');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@ldsgrupo1.pt\",\n  \"password\": \"Admin123!\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login", ""]
+        },
+        "description": "Autentica o utilizador e devolve access token (15 min) e refresh token (7 dias). Os tokens são guardados automaticamente nas variáveis de ambiente pelo script de teste."
+      },
+      "response": []
+    },
+    {
+      "name": "Refresh Token",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/refresh/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "refresh", ""]
+        },
+        "description": "Renova o access token usando o refresh token. Não requer Bearer no header."
+      },
+      "response": []
+    },
+    {
+      "name": "Me (perfil do utilizador)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/auth/me/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "me", ""]
+        },
+        "description": "Devolve os dados do utilizador autenticado extraídos do JWT. Requer Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/logout/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "logout", ""]
+        },
+        "description": "Invalida o refresh token (blacklist). Requer Bearer token no header."
+      },
+      "response": []
+    }
+  ]
+}
