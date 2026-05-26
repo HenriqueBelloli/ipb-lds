@@ -150,6 +150,33 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  cliente-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_cliente
+    build:
+      context: ./backend
+      dockerfile: cliente_service/Dockerfile
+    environment:
+      DB_HOST: postgres-cliente
+      DB_NAME: cliente_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/api/clientes/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres-cliente:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
