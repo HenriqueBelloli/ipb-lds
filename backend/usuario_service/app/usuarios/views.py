@@ -10,7 +10,11 @@ from shared.auth_middleware.permissions import IsOperador, IsAdministrador
 
 
 class UsuarioListCreateView(APIView):
-    permission_classes = [IsAdministrador]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsOperador()]
+        return [IsAdministrador()]
 
     def perform_create(self, serializer):
         usuario = serializer.save()
@@ -56,7 +60,11 @@ class UsuarioListCreateView(APIView):
 
 
 class UsuarioDetailUpdateView(APIView):
-    permission_classes = [IsAdministrador]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsOperador()]
+        return [IsAdministrador()]
 
     def perform_update(self, serializer, pk):
         usuario_anterior = self._get_object(pk)
@@ -86,7 +94,11 @@ class UsuarioDetailUpdateView(APIView):
 
 
 class DelegacaoListCreateView(APIView):
-    permission_classes = [IsAdministrador]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsOperador()]
+        return [IsAdministrador()]
 
     @extend_schema(responses=DelegacaoListSerializer(many=True))
     def get(self, request):
