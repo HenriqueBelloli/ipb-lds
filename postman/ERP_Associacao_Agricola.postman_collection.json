@@ -111,6 +111,21 @@
         },
         {
           "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 204) {",
+                  "    pm.environment.set('access_token', '');",
+                  "    pm.environment.set('refresh_token', '');",
+                  "    console.log('Tokens eliminados nas variáveis de ambiente.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -181,9 +196,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/usuarios/{{usuario_id}}/",
+              "raw": "{{base_url}}/api/usuarios/:usuario_id/",
               "host": ["{{base_url}}"],
-              "path": ["api", "usuarios", "{{usuario_id}}", ""]
+              "path": ["api", "usuarios", ":usuario_id", ""]
             },
             "description": "Obtém o detalhe de um utilizador pelo ID."
           },
@@ -206,9 +221,9 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/api/usuarios/{{usuario_id}}/",
+              "raw": "{{base_url}}/api/usuarios/:usuario_id/",
               "host": ["{{base_url}}"],
-              "path": ["api", "usuarios", "{{usuario_id}}", ""]
+              "path": ["api", "usuarios", ":usuario_id", ""]
             },
             "description": "Atualiza dados de um utilizador, incluindo o campo ativo."
           },
