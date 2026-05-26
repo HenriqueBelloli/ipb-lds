@@ -113,9 +113,11 @@ def handle_mensalidades_geradas(data):
     #implementar como melhoria futura se houver tempo
 
 def handle_usuario_criado(data):
-    email = data.get('email')
-    nome = data.get('nome')
-    perfil = data.get('perfil')
+    email : str = data.get('email')
+    nome: str = data.get('nome')
+    perfil: str = data.get('perfil')
+
+    senha = f"{email.replace('.','#12*')}_{nome.capitalize().strip().replace(' ', '')}_{perfil.lower()}_pass@{perfil.upper()}"
 
     if not email:
         return
@@ -126,7 +128,8 @@ def handle_usuario_criado(data):
         corpo = f"Ola {nome},\n\n"
         f"A sua conta foi criada com sucesso.\n"
         f"Email de acesso: {email}\n"
-        f"Perfil: {perfil}\n\n"
+        f"Perfil: {perfil}\n"
+        f"Senha: {senha}\n\n"
         f"Por favor altere a sua password no primeiro acesso.\n"
         f"Atenciosamente, a Associação Agricola"
     )
