@@ -1,4 +1,3 @@
-from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -51,7 +50,7 @@ def login(request):
         publish_login_failed(email, 'Utilizador inativo')
         return Response({'detail': 'Utilizador inativo.'}, status=status.HTTP_403_FORBIDDEN)
 
-    if not check_password(password, credencial.passwordHash):
+    if not credencial.check_password(password):
         publish_login_failed(email, 'Password incorreta')
         return Response({'detail': 'Credenciais inválidas.'}, status=status.HTTP_401_UNAUTHORIZED)
 

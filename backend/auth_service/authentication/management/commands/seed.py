@@ -18,7 +18,6 @@ Utilizadores:
 """
 
 from django.core.management.base import BaseCommand
-from django.contrib.auth.hashers import make_password
 from authentication.models import Credencial
 
 # ── UUIDs fixos partilhados com o usuario-service ────────────────────────────
@@ -78,14 +77,15 @@ class Command(BaseCommand):
                 ignorados += 1
                 continue
 
-            Credencial.objects.create(
+            cred = Credencial(
                 usuarioId=dados['usuarioId'],
                 delegacaoId=dados['delegacaoId'],
                 email=dados['email'],
-                passwordHash=make_password(dados['password']),
                 perfil=dados['perfil'],
                 ativo=True,
             )
+            cred.set_password(dados['password'])
+            cred.save()
             criados += 1
             self.stdout.write(
                 self.style.SUCCESS(f"  [+] {dados['perfil']:15s} {dados['email']}")
