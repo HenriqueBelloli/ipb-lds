@@ -1,46 +1,46 @@
 from rest_framework.permissions import BasePermission
 
+PERFIL_ORDER = {
+    'OPERADOR': 1,
+    'GESTOR': 2,
+    'FINANCEIRO': 3,
+    'DIRECAO': 4,
+    'ADMINISTRADOR': 5,
+}
 
-class HasPerfil(BasePermission):
-    """Classe base para verificação de perfil via claims do JWT."""
 
-    perfis_requeridos: list = []
+class HasPerfilMinimo(BasePermission):
+    """Permite acesso se o perfil do token >= perfil_minimo na hierarquia."""
+
+    perfil_minimo: str = 'ADMINISTRADOR'
 
     def has_permission(self, request, view):
         auth = getattr(request, 'auth', None)
         if not auth:
             return False
-        return auth.get('perfil') in self.perfis_requeridos
+        nivel_user = PERFIL_ORDER.get(auth.get('perfil'), 0)
+        nivel_req = PERFIL_ORDER.get(self.perfil_minimo, 99)
+        return nivel_user >= nivel_req
 
 
-class IsOperador(HasPerfil):
-    """Acesso para OPERADOR, GESTOR e ADMINISTRADOR."""
-
-    perfis_requeridos = ['OPERADOR', 'GESTOR', 'ADMINISTRADOR']
+class IsOperador(HasPerfilMinimo):
+    perfil_minimo = 'OPERADOR'
 
 
-class IsGestor(HasPerfil):
-    """Acesso para GESTOR e ADMINISTRADOR."""
-
-    perfis_requeridos = ['GESTOR', 'ADMINISTRADOR']
+class IsGestor(HasPerfilMinimo):
+    perfil_minimo = 'GESTOR'
 
 
-class IsFinanceiro(HasPerfil):
-    """Acesso para FINANCEIRO e ADMINISTRADOR."""
-
-    perfis_requeridos = ['FINANCEIRO', 'ADMINISTRADOR']
+class IsFinanceiro(HasPerfilMinimo):
+    perfil_minimo = 'FINANCEIRO'
 
 
-class IsDirecao(HasPerfil):
-    """Acesso para DIRECAO e ADMINISTRADOR."""
-
-    perfis_requeridos = ['DIRECAO', 'ADMINISTRADOR']
+class IsDirecao(HasPerfilMinimo):
+    perfil_minimo = 'DIRECAO'
 
 
-class IsAdministrador(HasPerfil):
-    """Acesso exclusivo para ADMINISTRADOR."""
-
-    perfis_requeridos = ['ADMINISTRADOR']
+class IsAdministrador(HasPerfilMinimo):
+    perfil_minimo = 'ADMINISTRADOR'
 
 
 class IsMesmaDelegacao(BasePermission):
@@ -49,7 +49,7 @@ class IsMesmaDelegacao(BasePermission):
     O objeto acedido deve expor um atributo `delegacaoId` (UUID ou str).
 
     Uso típico em views de detalhe:
-        permission_classes = [IsAuthenticated, IsMesmaDelegacao]
+        permission_classes = [IsOperador, IsMesmaDelegacao]
     """
 
     def has_permission(self, request, view):
