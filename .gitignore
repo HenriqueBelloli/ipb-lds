@@ -1,8 +1,12 @@
 # OS / editor
 .DS_Store
 Thumbs.db
-.vscode/
+
 .idea/
+AGENTS.md
+CLAUDE.md
+.claude/
+.claude/*
 
 # Logs
 *.log
@@ -27,6 +31,10 @@ coverage/
 # Python caches
 __pycache__/
 *.py[cod]
+
+# Django collected static files
+staticfiles/
+staticfles/
 
 # Docker
 *.pid
