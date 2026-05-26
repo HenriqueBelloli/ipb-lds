@@ -24,6 +24,10 @@ class UsuarioListCreateView(APIView):
     def get(self, request):
         qs = Usuario.objects.all()
 
+        token_perfil = request.auth.get('perfil')
+        if token_perfil in ('OPERADOR', 'GESTOR', 'FINANCEIRO'):
+            qs = qs.filter(delegacaoId=request.auth.get('delegacaoId'))
+
         perfil = request.query_params.get('perfil')
         ativo = request.query_params.get('ativo')
         delegecao_id = request.query_params.get('delegacaoId')
