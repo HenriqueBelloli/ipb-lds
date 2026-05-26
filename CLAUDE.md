@@ -349,7 +349,7 @@ PERFIS = [
 ]
 ```
 
-### Middleware JWT reutilizável
+### Autenticação JWT — shared/auth_middleware/
 
 Cada microserviço valida o JWT localmente. O token contém:
 
@@ -362,12 +362,28 @@ Cada microserviço valida o JWT localmente. O token contém:
 }
 ```
 
-Criar um módulo `shared/auth_middleware/` com:
-- `middleware.py` — valida JWT no header Authorization
-- `decorators.py` — `@require_perfil(['GESTOR', 'FINANCEIRO'])`
-- `permissions.py` — classes DRF IsOperador, IsGestor, IsFinanceiro, IsDirecao, IsAdministrador
+O módulo `shared/auth_middleware/` contém:
+- `drf_authentication.py` — `JWTStatelessAuthentication`: autentica no DRF sem DB lookup (usar em todos os serviços não-auth)
+- `permissions.py` — `IsOperador`, `IsGestor`, `IsFinanceiro`, `IsDirecao`, `IsAdministrador`, `IsMesmaDelegacao` (hierarquia numérica via `PERFIL_ORDER`)
+- `middleware.py` — `JWTMiddleware`: valida JWT para views Django puras (sem DRF)
+- `decorators.py` — `@require_perfil(...)`: protege views Django puras (sem DRF)
 
-Este módulo é copiado para todos os microserviços que precisam de autenticação.
+**Padrão para serviços DRF** (todos excepto auth-service):
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'shared.auth_middleware.drf_authentication.JWTStatelessAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    ...
+}
+```
+
+`JWTStatelessAuthentication` valida assinatura e expiração do token, e preenche `request.user` (_JWTUser) e `request.auth` (payload dict) no sistema DRF. `JWTMiddleware` destina-se a views Django puras — não registar no MIDDLEWARE de serviços DRF.
 
 ### Regras de acesso por módulo
 
@@ -940,9 +956,9 @@ deploy-prod:
 - [x] Estrutura de pastas definida
 
 ### A implementar
-- [ ] Infraestrutura Docker base (docker-compose, PostgreSQL, RabbitMQ, nginx)
-- [ ] auth-service — JWT, RBAC, middleware
-- [ ] usuario-service — utilizadores, delegações
+- [x] Infraestrutura Docker base (docker-compose, PostgreSQL, RabbitMQ, nginx)
+- [x] auth-service — JWT, RBAC, autenticação
+- [x] usuario-service — utilizadores, delegações, protecção de rotas
 - [ ] cliente-service — clientes, associados, inadimplência
 - [ ] servico-service — catálogo, preços por delegação
 - [ ] os-service — OS, estados, histórico, eventos
@@ -993,9 +1009,10 @@ backend/
 │   ├── rabbitmq.py                ← publish_event(), start_consumer()
 │   └── auth_middleware/
 │       ├── __init__.py
-│       ├── middleware.py          ← JWTMiddleware (valida JWT sem DB)
-│       ├── decorators.py          ← @require_perfil(['GESTOR'])
-│       └── permissions.py        ← IsOperador, IsGestor, IsFinanceiro, IsDirecao, IsAdministrador, IsMesmaDelegacao
+│       ├── drf_authentication.py  ← JWTStatelessAuthentication (DRF, sem DB — usar em serviços não-auth)
+│       ├── middleware.py          ← JWTMiddleware (Django puro, não usar em serviços DRF)
+│       ├── decorators.py          ← @require_perfil (views Django puras)
+│       └── permissions.py        ← IsOperador…IsAdministrador (hierarquia PERFIL_ORDER), IsMesmaDelegacao
 ├── auth_service/                  ← único serviço implementado como referência
 │   ├── Dockerfile
 │   ├── entrypoint.sh
@@ -1122,7 +1139,7 @@ Quando adicionares um novo serviço, acrescentar o seu path aos `extraPaths`:
 
 1. **Nunca usar ForeignKey entre serviços** — referências externas são sempre UUIDField simples
 2. **Cada serviço tem o seu PostgreSQL** — nunca aceder à DB de outro serviço diretamente
-3. **JWT validado localmente** — sem chamada ao auth-service a cada request
+3. **JWT validado localmente via `JWTStatelessAuthentication`** — sem chamada ao auth-service a cada request; `JWTMiddleware` existe no shared mas destina-se a views Django puras (não DRF)
 4. **Ficheiros .env nunca versionados** — apenas .env.example no git
 5. **RabbitMQ com exchange do tipo topic** — permite subscrição por padrão de routing key
 6. **Todos os IDs são UUID** — nunca integer auto-increment
