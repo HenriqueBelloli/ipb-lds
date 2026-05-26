@@ -83,6 +83,20 @@ class UsuarioDetailUpdateView(APIView):
     @extend_schema(responses=UsuarioListSerializer(many=False))
     def get(self, request, pk):
         usuario = self._get_object(pk)
+
+        auth = request.auth
+        token_usuario_id = str(auth.get('usuarioId', ''))
+        token_delegacao_id = str(auth.get('delegacaoId', ''))
+        token_perfil = auth.get('perfil')
+
+        if str(pk) != token_usuario_id:
+            if token_perfil not in ('DIRECAO', 'ADMINISTRADOR'):
+                if str(usuario.delegacaoId) != token_delegacao_id:
+                    return Response(
+                        {'detail': 'Sem permissão para aceder a utilizadores de outra delegação.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
         serializer = UsuarioListSerializer(usuario)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
