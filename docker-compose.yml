@@ -1,27 +1,84 @@
+version: '3.8'
+
 services:
-  cliente-service-db:
-    container_name: cliente-service-db
-    image: postgres:16
-    env_file:
-      - ./backend/cliente_service/.env
-    ports:
-      - "5435:5432"
-    volumes:
-      - cliente-service-db-data:/var/lib/postgresql/data
+  # =========================================================================
+  # MICROSSERVIÇO: CLIENTE SERVICE (commented)
+  # =========================================================================
+  # cliente-service-db:
+  #   container_name: cliente-service-db
+  #   image: postgres:16
+  #   env_file:
+  #     - ./backend/cliente_service/.env
+  #   ports:
+  #     - "5435:5432"
+  #   volumes:
+  #     - cliente-service-db-data:/var/lib/postgresql/data
+  #   networks:
+  #     - sdl-network
 
-  cliente-service:
-    container_name: erp_cliente_service
+  # cliente-service:
+  #   container_name: erp_cliente_service
+  #   build:
+  #     context: backend/cliente_service
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8003:8003"
+  #   env_file:
+  #     - ./backend/cliente_service/.env
+  #   volumes:
+  #     - ./backend/cliente_service:/app
+  #   depends_on:
+  #     - cliente-service-db
+  #   networks:
+  #     - sdl-network
+
+  # =========================================================================
+  # MICROSSERVIÇO: SERVICO SERVICE
+  # =========================================================================
+  servico-service-db:
+    container_name: servico-service-db
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=servicos_db
+      - POSTGRES_USER=django_user
+      - POSTGRES_PASSWORD=django_pass
+    ports:
+      - "5436:5432"
+    volumes:
+      - servico-service-db-data:/var/lib/postgresql/data
+    networks:
+      - sdl-network
+
+  servico-service:
+    container_name: erp_servico_service
     build:
-      context: backend/cliente_service
+      context: ./backend/servico-service
       dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate && 
+            gunicorn config.wsgi:application --bind 0.0.0.0:8004 --workers 2"
     ports:
-      - "8003:8003"
-    env_file:
-      - ./backend/cliente_service/.env
+      - "8004:8004"
+    environment:
+      - DB_HOST=servico-service-db
+      - DB_NAME=servicos_db
+      - DB_USER=django_user
+      - DB_PASSWORD=django_pass
+      - DB_PORT=5432
     volumes:
-      - ./backend/cliente_service:/app
+      - ./backend/servico-service:/app
     depends_on:
-      - cliente-service-db
+      - servico-service-db
+    networks:
+      - sdl-network
 
+# =========================================================================
+# VOLUMES E REDES PARTILHADAS
+# =========================================================================
 volumes:
-  cliente-service-db-data:
+  # cliente-service-db-data:
+  servico-service-db-data:
+
+networks:
+  sdl-network:
+    driver: bridge
