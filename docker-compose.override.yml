@@ -7,5 +7,5 @@
 services:
   auth-service:
     build:
-      context: ./backend/auth_service
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: auth_service/Dockerfile
