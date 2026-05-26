@@ -561,7 +561,10 @@ ALLOWED_HOSTS=*
 
 ### Nomenclatura dos containers
 
-Serviços: `erp_<servico>` (ex: `erp_auth`, `erp_usuario`). Bases de dados: `erp_db_<servico>` (ex: `erp_db_auth`). **Contexto de build sempre `./backend/`** — necessário para aceder ao `shared/` centralizado. Ver `docker-compose.yml` para configuração completa.
+- **COMPOSE_PROJECT_NAME** (`erp` no `.env`) — cria o grupo "erp" visível no Docker Desktop e prefixia redes/volumes automáticos (ex: rede `erp_default`)
+- **container_name** explícito (definido no `docker-compose.yml`) — segue o padrão `ldsgrupo1_<servico>`: `ldsgrupo1_auth`, `ldsgrupo1_usuario`, `ldsgrupo1_nginx`, `ldsgrupo1_rabbitmq`, `ldsgrupo1_db_auth`, `ldsgrupo1_db_usuario`, etc.
+
+**Contexto de build sempre `./backend/`** — necessário para aceder ao `shared/` centralizado. Ver `docker-compose.yml` para configuração completa.
 
 ---
 
