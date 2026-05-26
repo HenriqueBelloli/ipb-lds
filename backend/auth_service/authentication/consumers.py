@@ -1,7 +1,8 @@
 import json
 import logging
-from django.contrib.auth.hashers import make_password
+
 from shared.rabbitmq import start_consumer
+
 from .models import Credencial
 
 logger = logging.getLogger(__name__)
@@ -23,14 +24,16 @@ def handle_usuario_criado(ch, method, properties, body):
             logger.info(f'Credencial já existe para usuarioId {usuario_id}')
             return
 
+        # Usa set_password() do AbstractBaseUser em vez de make_password() + passwordHash
         password_temp = 'temp_' + usuario_id[:8]
-        credencial = Credencial.objects.create(
+        credencial = Credencial(
             usuarioId=usuario_id,
             delegacaoId=delegacao_id,
             email=email,
-            passwordHash=make_password(password_temp),
-            perfil=perfil
+            perfil=perfil,
         )
+        credencial.set_password(password_temp)
+        credencial.save()
         logger.info(f'Credencial criada para {email}')
     except Exception as e:
         logger.error(f'Erro ao processar usuario.criado: {str(e)}')
