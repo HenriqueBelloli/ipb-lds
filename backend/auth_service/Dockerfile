@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY shared/ ./shared/
 
 # Código do serviço
-COPY auth_service/ .
+COPY auth_service/app/ .
 
 # Entrypoint na raiz do container
 COPY auth_service/entrypoint.sh /entrypoint.sh

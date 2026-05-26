@@ -7,4 +7,4 @@ done
 
 python manage.py migrate --noinput
 python manage.py seed
-exec gunicorn auth_service.wsgi:application --bind 0.0.0.0:8001 --workers 2
+exec gunicorn core.wsgi:application --bind 0.0.0.0:8001 --workers 2
