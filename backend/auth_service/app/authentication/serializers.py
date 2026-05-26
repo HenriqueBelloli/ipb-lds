@@ -14,6 +14,10 @@ class TokenResponseSerializer(serializers.Serializer):
     perfil = serializers.CharField()
 
 
+class RefreshRequestSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
 class RefreshResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
 

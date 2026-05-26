@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema
 
 from .models import Credencial
 from .publisher import publish_login_failed, publish_login_success
-from .serializers import LoginSerializer, MeSerializer, RefreshResponseSerializer, TokenResponseSerializer
+from .serializers import LoginSerializer, MeSerializer, RefreshRequestSerializer, RefreshResponseSerializer, TokenResponseSerializer
 
 
 def _gerar_tokens(credencial: Credencial) -> dict:
@@ -59,10 +59,7 @@ def login(request):
     return Response(tokens, status=status.HTTP_200_OK)
 
 
-@extend_schema(
-    request={'type': 'object', 'properties': {'refresh': {'type': 'string'}}},
-    responses={200: RefreshResponseSerializer}
-)
+@extend_schema(request=RefreshRequestSerializer, responses={200: RefreshResponseSerializer})
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh(request):
@@ -92,7 +89,7 @@ def me(request):
 
 
 @extend_schema(
-    request={'type': 'object', 'properties': {'refresh': {'type': 'string'}}, 'required': ['refresh']},
+    request=RefreshRequestSerializer,
     responses={204: None},
     description='Invalida o refresh token. Requer autenticação Bearer.',
 )
