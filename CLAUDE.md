@@ -1058,22 +1058,35 @@ ENTRYPOINT ["/entrypoint.sh"]
 - **rabbitmq.py**: usado por todos os serviços que publicam ou consomem eventos
 
 ```python
-# Qualquer serviço que precisar de JWT — adicionar ao settings.py:
-MIDDLEWARE = [
+# Autenticação DRF — todos os serviços excepto auth-service:
+# Adicionar ao REST_FRAMEWORK em settings.py:
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'shared.auth_middleware.drf_authentication.JWTStatelessAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
     ...
-    'shared.auth_middleware.middleware.JWTMiddleware',
-]
+}
+# JWTStatelessAuthentication valida JWT sem DB lookup.
+# Define request.user (_JWTUser) e request.auth (payload dict) no sistema DRF.
+# NÃO adicionar JWTMiddleware ao MIDDLEWARE — redundante e na camada errada para DRF.
 
-# Proteger uma view por perfil:
-from shared.auth_middleware import require_perfil, IsGestor
+# Proteger uma view por perfil (class-based view):
+from shared.auth_middleware.permissions import IsOperador, IsAdministrador
 
-@require_perfil(['GESTOR', 'ADMINISTRADOR'])
-@api_view(['POST'])
-def minha_view(request):
-    usuario_id = request.auth.get('usuarioId')
-    delegacao_id = request.auth.get('delegacaoId')
-    perfil = request.auth.get('perfil')
-    ...
+class MinhaView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsOperador()]
+        return [IsAdministrador()]
+
+    def get(self, request):
+        usuario_id = request.auth.get('usuarioId')
+        delegacao_id = request.auth.get('delegacaoId')
+        perfil = request.auth.get('perfil')
+        ...
 
 # Publicar um evento RabbitMQ:
 from shared.rabbitmq import publish_event
