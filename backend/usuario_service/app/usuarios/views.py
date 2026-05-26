@@ -209,5 +209,11 @@ class DelegacaoUpdateView(APIView):
             serializer.save()
 
             return Response(DelegacaoListSerializer(delegacao).data, status = status.HTTP_200_OK)
-        
+
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+
+
+from django.http import JsonResponse
+
+def health(request):
+    return JsonResponse({"status": "ok"})
