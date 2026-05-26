@@ -2,19 +2,9 @@
 
 ## Visão Geral do Projeto
 
-Sistema ERP Web centralizado para uma associação agrícola com 9 delegações regionais. O sistema resolve problemas críticos de fragmentação de dados, ausência de rastreabilidade de lançamentos, controlo financeiro manual e falta de indicadores de gestão.
+Sistema ERP Web centralizado para uma associação agrícola com 9 delegações regionais. Resolve login partilhado sem rastreabilidade, dados dispersos pelas delegações, consolidação financeira manual em Excel, ausência de gestão de OS e de indicadores em tempo real.
 
-### Problema que o sistema resolve
-
-- Login partilhado no software atual (XD Software) — sem rastreabilidade de quem lançou o quê e em que delegação
-- Dados dispersos pelas 9 delegações sem repositório central
-- Consolidação financeira manual feita em Excel por um único colaborador
-- Sem gestão estruturada de ordens de serviço
-- Sem indicadores operacionais e financeiros em tempo real
-
-### Solução
-
-WebApp central com arquitetura de microserviços, onde cada delegação acede com credenciais individuais. Todos os registos ficam marcados com utilizador, delegação e timestamp. Módulos de cadastros, ordens de serviço, financeiro e conciliação bancária.
+**Solução:** WebApp com arquitetura de microserviços onde cada delegação acede com credenciais individuais. Todos os registos são marcados com utilizador, delegação e timestamp. Módulos: cadastros, ordens de serviço, financeiro e conciliação bancária.
 
 ---
 
@@ -57,109 +47,53 @@ WebApp central com arquitetura de microserviços, onde cada delegação acede co
 ### Roteamento nginx
 
 ```
-/api/auth/       → auth-service:8001
-/api/usuarios/   → usuario-service:8002
-/api/clientes/   → cliente-service:8003
-/api/servicos/   → servico-service:8004
-/api/ordens/     → os-service:8005
-/api/financeiro/ → financeiro-service:8006
-/api/conciliacao/→ conciliacao-service:8007
+/api/auth/        → auth-service:8001
+/api/usuarios/    → usuario-service:8002
+/api/clientes/    → cliente-service:8003
+/api/servicos/    → servico-service:8004
+/api/ordens/      → os-service:8005
+/api/financeiro/  → financeiro-service:8006
+/api/conciliacao/ → conciliacao-service:8007
 /api/notificacoes/→ notification-service:8008
-/                → frontend:3000
+/                 → frontend:3000
 ```
 
 ---
 
 ## Estrutura de Pastas
 
+Todos os serviços seguem o padrão de `backend/auth_service/` (referência completa). A estrutura real implementada:
+
 ```
-projeto-erp/
-├── backend/
-│   ├── auth-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/          # settings, urls, wsgi
-│   │       └── authentication/# models, views, serializers, urls
-│   ├── usuario-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── usuarios/
-│   ├── cliente-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── clientes/
-│   ├── servico-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── servicos/
-│   ├── os-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── ordens/
-│   ├── financeiro-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── financeiro/
-│   ├── conciliacao-service/
-│   │   ├── Dockerfile
-│   │   ├── requirements.txt
-│   │   ├── .env.example
-│   │   └── app/
-│   │       ├── manage.py
-│   │       ├── core/
-│   │       └── conciliacao/
-│   └── notification-service/
-│       ├── Dockerfile
-│       ├── requirements.txt
-│       ├── .env.example
-│       └── app/
-│           ├── manage.py
-│           ├── core/
-│           └── notifications/
-├── docs/
-│   ├── architecture.md
-│   └── diagrams/
-├── frontend/
+backend/
+├── shared/                        ← fonte única da verdade — NÃO duplicar
+│   ├── __init__.py
+│   ├── rabbitmq.py                ← publish_event(), start_consumer()
+│   └── auth_middleware/
+│       ├── __init__.py
+│       ├── drf_authentication.py  ← JWTStatelessAuthentication (DRF, sem DB — todos os serviços não-auth)
+│       ├── middleware.py          ← JWTMiddleware (Django puro — não usar em serviços DRF)
+│       ├── decorators.py          ← @require_perfil (views Django puras)
+│       └── permissions.py        ← IsOperador…IsAdministrador (hierarquia PERFIL_ORDER), IsMesmaDelegacao
+├── auth_service/                  ← referência: template para novos serviços
 │   ├── Dockerfile
-│   ├── package.json
-│   ├── .env.example
-│   └── src/
-├── reverse-proxy/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── nginx.dev.conf
-├── postman/
-│   └── ERP_Associacao.postman_collection.json
-├── docker-compose.yml
-├── docker-compose.staging.yml
-├── docker-compose.prod.yml
-├── .gitlab-ci.yml
-├── .gitignore
-└── README.md
+│   ├── entrypoint.sh
+│   ├── requirements.txt
+│   ├── manage.py
+│   ├── auth_service/              ← pacote Django (settings, urls, wsgi)
+│   └── authentication/            ← app Django
+├── usuario_service/               ← segue o mesmo padrão
+│   └── ...
+└── <novo_service>/
+    ├── Dockerfile
+    ├── entrypoint.sh
+    ├── requirements.txt
+    ├── manage.py
+    ├── <nome_service>/            ← pacote Django (settings, urls, wsgi)
+    └── <nome_app>/                ← app Django
 ```
+
+Ver **Padrão para Adicionar um Novo Serviço** para Dockerfile, docker-compose e uso de `shared/`.
 
 ---
 
@@ -347,11 +281,12 @@ PERFIS = [
     'DIRECAO',        # Leitura total — todos os módulos e delegações
     'ADMINISTRADOR',  # Configuração do sistema — utilizadores, delegações
 ]
+# Hierarquia numérica: OPERADOR(1) < GESTOR(2) < FINANCEIRO(3) < DIRECAO(4) < ADMINISTRADOR(5)
+# IsOperador() → verdadeiro para qualquer perfil autenticado
+# IsAdministrador() → apenas ADMINISTRADOR
 ```
 
-### Autenticação JWT — shared/auth_middleware/
-
-Cada microserviço valida o JWT localmente. O token contém:
+### Token JWT (payload)
 
 ```json
 {
@@ -362,36 +297,13 @@ Cada microserviço valida o JWT localmente. O token contém:
 }
 ```
 
-O módulo `shared/auth_middleware/` contém:
-- `drf_authentication.py` — `JWTStatelessAuthentication`: autentica no DRF sem DB lookup (usar em todos os serviços não-auth)
-- `permissions.py` — `IsOperador`, `IsGestor`, `IsFinanceiro`, `IsDirecao`, `IsAdministrador`, `IsMesmaDelegacao` (hierarquia numérica via `PERFIL_ORDER`)
-- `middleware.py` — `JWTMiddleware`: valida JWT para views Django puras (sem DRF)
-- `decorators.py` — `@require_perfil(...)`: protege views Django puras (sem DRF)
-
-**Padrão para serviços DRF** (todos excepto auth-service):
-
-```python
-# settings.py
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'shared.auth_middleware.drf_authentication.JWTStatelessAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    ...
-}
-```
-
-`JWTStatelessAuthentication` valida assinatura e expiração do token, e preenche `request.user` (_JWTUser) e `request.auth` (payload dict) no sistema DRF. `JWTMiddleware` destina-se a views Django puras — não registar no MIDDLEWARE de serviços DRF.
-
 ### Regras de acesso por módulo
 
 ```
-OPERADOR    → Criar/editar OS e clientes da SUA delegação apenas
-GESTOR      → Tudo do OPERADOR + preços de serviços + leitura consolidada
-FINANCEIRO  → Módulo financeiro de TODAS as delegações + leitura de OS
-DIRECAO     → Leitura de tudo — sem criação ou edição
+OPERADOR      → Criar/editar OS e clientes da SUA delegação apenas
+GESTOR        → Tudo do OPERADOR + preços de serviços + leitura consolidada
+FINANCEIRO    → Módulo financeiro de TODAS as delegações + leitura de OS
+DIRECAO       → Leitura de tudo — sem criação ou edição
 ADMINISTRADOR → Utilizadores, delegações, configurações globais
 ```
 
@@ -508,15 +420,14 @@ PATCH /ordens/{id}/cancelar {motivo}
 ### Configuração
 
 ```python
-RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
-RABBITMQ_PORT = 5672
-RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
-RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
 EXCHANGE_NAME = 'erp_events'
 EXCHANGE_TYPE = 'topic'
+# Variáveis de ambiente: RABBITMQ_HOST, RABBITMQ_PORT (5672), RABBITMQ_USER, RABBITMQ_PASS
 ```
 
-### Eventos Definidos (mínimo 10 — requisito: 8)
+Implementação completa em `backend/shared/rabbitmq.py`. Ver **shared/ — regra de utilização** para exemplos de uso.
+
+### Eventos Definidos
 
 | # | Evento (routing key) | Publicado por | Consumido por | Dados |
 |---|---|---|---|---|
@@ -531,62 +442,6 @@ EXCHANGE_TYPE = 'topic'
 | 9 | `financeiro.pagamento.entrada.confirmado` | financeiro-service | os-service | {osId, contaReceberId} |
 | 10 | `financeiro.conta.paga` | financeiro-service | notification-service | {contaReceberId, clienteId} |
 | 11 | `financeiro.mensalidades.geradas` | financeiro-service | notification-service | {total, mesReferencia} |
-
-### Padrão de Publicação
-
-```python
-# publisher.py — reutilizável em todos os serviços
-import pika
-import json
-import os
-
-def publish_event(routing_key: str, data: dict):
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=os.environ.get('RABBITMQ_HOST', 'rabbitmq'),
-            port=5672,
-            credentials=pika.PlainCredentials(
-                os.environ.get('RABBITMQ_USER', 'guest'),
-                os.environ.get('RABBITMQ_PASS', 'guest')
-            )
-        )
-    )
-    channel = connection.channel()
-    channel.exchange_declare(exchange='erp_events', exchange_type='topic', durable=True)
-    channel.basic_publish(
-        exchange='erp_events',
-        routing_key=routing_key,
-        body=json.dumps(data),
-        properties=pika.BasicProperties(delivery_mode=2)  # persistent
-    )
-    connection.close()
-```
-
-### Padrão de Consumo
-
-```python
-# consumer.py — base para todos os consumidores
-import pika
-import json
-import threading
-import os
-
-def start_consumer(queue_name: str, routing_keys: list, callback):
-    def consume():
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=os.environ.get('RABBITMQ_HOST', 'rabbitmq'))
-        )
-        channel = connection.channel()
-        channel.exchange_declare(exchange='erp_events', exchange_type='topic', durable=True)
-        channel.queue_declare(queue=queue_name, durable=True)
-        for key in routing_keys:
-            channel.queue_bind(exchange='erp_events', queue=queue_name, routing_key=key)
-        channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
-        channel.start_consuming()
-
-    thread = threading.Thread(target=consume, daemon=True)
-    thread.start()
-```
 
 ---
 
@@ -627,67 +482,66 @@ GET    /api/clientes/{id}/delegacoes/   → listar delegações do cliente
 ### servico-service (:8004)
 
 ```
-GET    /api/servicos/                        → listar catálogo global
-POST   /api/servicos/                        → criar serviço
-PUT    /api/servicos/{id}/                   → atualizar (inclui campo ativo)
+GET    /api/servicos/                         → listar catálogo global
+POST   /api/servicos/                         → criar serviço
+PUT    /api/servicos/{id}/                    → atualizar (inclui campo ativo)
 GET    /api/servicos/delegacao/{delegacaoId}/ → serviços disponíveis com preços
-POST   /api/servicos/delegacao/              → configurar serviço numa delegação
-PUT    /api/servicos/delegacao/{id}/         → atualizar preços e disponibilidade
+POST   /api/servicos/delegacao/               → configurar serviço numa delegação
+PUT    /api/servicos/delegacao/{id}/          → atualizar preços e disponibilidade
 ```
 
 ### os-service (:8005)
 
 ```
-GET    /api/ordens/              → listar: ?status=&delegacaoId=&clienteId=&periodo=
-POST   /api/ordens/              → criar OS
-GET    /api/ordens/{id}/         → detalhe
-PUT    /api/ordens/{id}/         → atualizar dados
-PATCH  /api/ordens/{id}/status/  → transicionar estado
-PATCH  /api/ordens/{id}/cancelar/ → cancelar com motivo
-GET    /api/ordens/{id}/historico/ → histórico de estados
-GET    /api/ordens/delegacao/{delegacaoId}/ → OS por delegação
+GET    /api/ordens/                           → listar: ?status=&delegacaoId=&clienteId=&periodo=
+POST   /api/ordens/                           → criar OS
+GET    /api/ordens/{id}/                      → detalhe
+PUT    /api/ordens/{id}/                      → atualizar dados
+PATCH  /api/ordens/{id}/status/               → transicionar estado
+PATCH  /api/ordens/{id}/cancelar/             → cancelar com motivo
+GET    /api/ordens/{id}/historico/            → histórico de estados
+GET    /api/ordens/delegacao/{delegacaoId}/   → OS por delegação
 ```
 
 ### financeiro-service (:8006)
 
 ```
-GET    /api/financeiro/contas-receber/          → listar: ?clienteId=&status=&tipo=
-GET    /api/financeiro/contas-receber/{id}/     → detalhe
-PATCH  /api/financeiro/contas-receber/{id}/faturar/ → faturar OS concluída
+GET    /api/financeiro/contas-receber/                        → listar: ?clienteId=&status=&tipo=
+GET    /api/financeiro/contas-receber/{id}/                   → detalhe
+PATCH  /api/financeiro/contas-receber/{id}/faturar/           → faturar OS concluída
 GET    /api/financeiro/contas-receber/inadimplente/{clienteId}/ → verificação (chamada interna)
-POST   /api/financeiro/pagamentos/              → registar pagamento
-GET    /api/financeiro/pagamentos/{id}/         → detalhe
-GET    /api/financeiro/mensalidades/configuracao/ → obter valor
-PUT    /api/financeiro/mensalidades/configuracao/ → atualizar valor
-POST   /api/financeiro/mensalidades/gerar/      → disparar geração manual
+POST   /api/financeiro/pagamentos/                            → registar pagamento
+GET    /api/financeiro/pagamentos/{id}/                       → detalhe
+GET    /api/financeiro/mensalidades/configuracao/             → obter valor
+PUT    /api/financeiro/mensalidades/configuracao/             → atualizar valor
+POST   /api/financeiro/mensalidades/gerar/                    → disparar geração manual
 ```
 
 ### conciliacao-service (:8007)
 
 ```
-POST   /api/conciliacao/importar/          → importar ficheiro (OFX/CSV)
-GET    /api/conciliacao/importacoes/       → listar importações
-GET    /api/conciliacao/movimentos/        → listar: ?status=
+POST   /api/conciliacao/importar/              → importar ficheiro (OFX/CSV)
+GET    /api/conciliacao/importacoes/           → listar importações
+GET    /api/conciliacao/movimentos/            → listar: ?status=
 PATCH  /api/conciliacao/movimentos/{id}/ignorar/ → marcar como ignorado
-POST   /api/conciliacao/manual/            → conciliar manualmente
-GET    /api/conciliacao/pendentes/         → movimentos por conciliar
+POST   /api/conciliacao/manual/                → conciliar manualmente
+GET    /api/conciliacao/pendentes/             → movimentos por conciliar
 ```
 
 ### notification-service (:8008)
 
 ```
-GET    /api/notificacoes/        → listar notificações
+GET    /api/notificacoes/          → listar notificações
 PATCH  /api/notificacoes/{id}/ler/ → marcar como lida
 ```
 
 ---
 
-## Docker Compose — Estrutura Base
+## Docker Compose
 
 ### Variáveis de ambiente padrão por serviço
 
 ```env
-# .env.example (padrão para todos os serviços)
 DEBUG=True
 SECRET_KEY=your-secret-key-here
 DB_NAME=service_db
@@ -707,87 +561,13 @@ ALLOWED_HOSTS=*
 
 ### Nomenclatura dos containers
 
-```yaml
-# docker-compose.yml
-services:
-  auth-service:
-    build: ./backend/auth-service
-    container_name: erp_auth
-    depends_on: [db-auth, rabbitmq]
-
-  db-auth:
-    image: postgres:15
-    container_name: erp_db_auth
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-
-  # Padrão repetido para cada microserviço
-  # db-usuario, db-cliente, db-servico, db-os, db-financeiro, db-conciliacao, db-notification
-
-  rabbitmq:
-    image: rabbitmq:3.12-management
-    container_name: erp_rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"  # management UI
-
-  nginx:
-    build: ./reverse-proxy
-    container_name: erp_nginx
-    ports:
-      - "80:80"
-    depends_on: [auth-service, usuario-service, cliente-service, ...]
-
-  frontend:
-    build: ./frontend
-    container_name: erp_frontend
-```
+Serviços: `erp_<servico>` (ex: `erp_auth`, `erp_usuario`). Bases de dados: `erp_db_<servico>` (ex: `erp_db_auth`). **Contexto de build sempre `./backend/`** — necessário para aceder ao `shared/` centralizado. Ver `docker-compose.yml` para configuração completa.
 
 ---
 
 ## Padrões de Código Django
 
-### Estrutura base de cada microserviço
-
-```python
-# core/settings.py — base igual para todos
-INSTALLED_APPS = [
-    'django.contrib.contenttypes',
-    'django.contrib.auth',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'drf_spectacular',
-    'corsheaders',
-    '<nome_do_app>',  # ex: 'usuarios', 'clientes', 'ordens'
-]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-}
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
-}
-```
-
-### Padrão de UUID como PK
+### UUID como PK (obrigatório em todos os modelos)
 
 ```python
 import uuid
@@ -801,68 +581,31 @@ class BaseModel(models.Model):
         abstract = True
 ```
 
-### Padrão de referência externa entre serviços
+### Referência externa entre serviços
 
 ```python
-# Não usar ForeignKey para entidades de outros serviços
-# Usar UUIDField simples
+# NUNCA usar ForeignKey para entidades de outros serviços — usar UUIDField simples
 class OrdemServico(BaseModel):
     clienteId = models.UUIDField()           # referência externa ao cliente-service
     delegacaoExecucaoId = models.UUIDField() # referência externa ao usuario-service
     usuarioCriacaoId = models.UUIDField()    # referência externa ao auth-service
-    # ... demais campos
 ```
 
-### Padrão de chamada síncrona entre serviços
+### Chamada síncrona entre serviços
 
-```python
-# services/external.py — padrão para chamadas HTTP entre serviços
-import requests
-import os
+Criar `<app>/services/external.py` com uma classe cliente por serviço externo. Cada método faz `requests.get/post` com `Authorization: Bearer <token>` e `timeout=5`. Propagar o token recebido no request — nunca gerar novo.
 
-class ClienteServiceClient:
-    BASE_URL = os.environ.get('CLIENTE_SERVICE_URL', 'http://cliente-service:8003')
+### settings.py
 
-    @staticmethod
-    def get_cliente(cliente_id: str, token: str) -> dict:
-        response = requests.get(
-            f"{ClienteServiceClient.BASE_URL}/api/clientes/{cliente_id}/",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=5
-        )
-        response.raise_for_status()
-        return response.json()
-
-    @staticmethod
-    def verificar_inadimplente(cliente_id: str, token: str) -> bool:
-        response = requests.get(
-            f"{ClienteServiceClient.BASE_URL}/api/clientes/{cliente_id}/inadimplente/",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=5
-        )
-        response.raise_for_status()
-        return response.json().get('inadimplente', False)
-```
+Ver `backend/auth_service/auth_service/settings.py` como referência base. Diferença para todos os outros serviços: usar `JWTStatelessAuthentication` em vez de `JWTAuthentication` (ver **shared/ — regra de utilização** abaixo).
 
 ---
 
-## requirements.txt Base (igual para todos os serviços)
+## requirements.txt
 
-```txt
-Django==4.2.7
-djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.0
-drf-spectacular==0.27.0
-psycopg2-binary==2.9.9
-python-decouple==3.8
-django-cors-headers==4.3.1
-pika==1.3.2
-requests==2.31.0
-Pillow==10.1.0
-gunicorn==21.2.0
-```
+Base: usar `backend/auth_service/requirements.txt` como referência (versões pinadas).
 
-### Adicionar por serviço específico
+Adicionar por serviço específico:
 
 ```txt
 # financeiro-service — scheduler de mensalidades
@@ -876,45 +619,9 @@ pandas==2.1.0
 
 ---
 
-## CI/CD GitLab — Estrutura do Pipeline
+## CI/CD GitLab
 
-```yaml
-# .gitlab-ci.yml
-stages:
-  - build
-  - push
-  - deploy-staging
-  - deploy-prod
-
-variables:
-  REGISTRY: $CI_REGISTRY
-  IMAGE_TAG: $CI_COMMIT_SHA
-
-.build_template: &build_template
-  stage: build
-  script:
-    - docker build -t $REGISTRY/$SERVICE_NAME:$IMAGE_TAG ./backend/$SERVICE_NAME
-
-build-auth:
-  <<: *build_template
-  variables:
-    SERVICE_NAME: auth-service
-
-# Repetir para cada serviço
-
-deploy-staging:
-  stage: deploy-staging
-  environment: staging
-  script:
-    - docker-compose -f docker-compose.staging.yml up -d
-
-deploy-prod:
-  stage: deploy-prod
-  environment: production
-  when: manual
-  script:
-    - docker-compose -f docker-compose.prod.yml up -d
-```
+Pipeline em `.gitlab-ci.yml`: stages `build → push → deploy-staging → deploy-prod`. Contexto de build é `./backend/` (para incluir `shared/`). Deploy para produção é sempre manual (`when: manual`).
 
 ---
 
@@ -1000,30 +707,7 @@ deploy-prod:
 
 ## Padrão para Adicionar um Novo Serviço
 
-### Estrutura de pastas implementada (real)
-
-```
-backend/
-├── shared/                        ← fonte única da verdade — NÃO duplicar
-│   ├── __init__.py
-│   ├── rabbitmq.py                ← publish_event(), start_consumer()
-│   └── auth_middleware/
-│       ├── __init__.py
-│       ├── drf_authentication.py  ← JWTStatelessAuthentication (DRF, sem DB — usar em serviços não-auth)
-│       ├── middleware.py          ← JWTMiddleware (Django puro, não usar em serviços DRF)
-│       ├── decorators.py          ← @require_perfil (views Django puras)
-│       └── permissions.py        ← IsOperador…IsAdministrador (hierarquia PERFIL_ORDER), IsMesmaDelegacao
-├── auth_service/                  ← único serviço implementado como referência
-│   ├── Dockerfile
-│   ├── entrypoint.sh
-│   ├── requirements.txt
-│   ├── manage.py
-│   ├── auth_service/              ← pacote Django (settings, urls, wsgi)
-│   └── authentication/            ← app Django
-└── <novo_service>/                ← seguir o mesmo padrão do auth_service
-```
-
-### docker-compose.override.yml — padrão por serviço
+### docker-compose — padrão por serviço
 
 O contexto de build é sempre `./backend/` (não `./backend/<service>/`) para que o
 Dockerfile consiga aceder ao `shared/` centralizado.
@@ -1075,8 +759,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 - **rabbitmq.py**: usado por todos os serviços que publicam ou consomem eventos
 
 ```python
-# Autenticação DRF — todos os serviços excepto auth-service:
-# Adicionar ao REST_FRAMEWORK em settings.py:
+# settings.py — todos os serviços excepto auth-service:
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'shared.auth_middleware.drf_authentication.JWTStatelessAuthentication',
@@ -1084,8 +767,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    ...
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
+
+SIMPLE_JWT = {
+    'SIGNING_KEY': os.environ.get('JWT_SECRET_KEY', SECRET_KEY),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'usuarioId',
+    'USER_ID_CLAIM': 'usuarioId',
+}
+
 # JWTStatelessAuthentication valida JWT sem DB lookup.
 # Define request.user (_JWTUser) e request.auth (payload dict) no sistema DRF.
 # NÃO adicionar JWTMiddleware ao MIDDLEWARE — redundante e na camada errada para DRF.
@@ -1107,12 +800,10 @@ class MinhaView(APIView):
 
 # Publicar um evento RabbitMQ:
 from shared.rabbitmq import publish_event
-
 publish_event('usuario.criado', {'usuarioId': str(id), 'email': email, 'perfil': perfil})
 
 # Consumir eventos:
 from shared.rabbitmq import start_consumer
-
 start_consumer('nome_da_fila', ['routing.key.*'], callback_fn)
 ```
 
