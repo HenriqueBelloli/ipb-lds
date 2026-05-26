@@ -23,7 +23,7 @@ stages:
   variables:
     IMAGE_PATH: backend/$SERVICE
     DOCKERFILE: ./backend/$SERVICE/Dockerfile
-    BUILD_CONTEXT: ./backend/$SERVICE
+    BUILD_CONTEXT: ./backend
   script:
     - docker build -t "$CI_REGISTRY_IMAGE/$IMAGE_PATH:$CI_COMMIT_SHA" -f $DOCKERFILE $BUILD_CONTEXT
     - mkdir -p image-artifacts
