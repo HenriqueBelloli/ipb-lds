@@ -917,6 +917,18 @@ deploy-prod:
 
 ---
 
+## Padrão de Commits
+
+- Mensagens em português
+- Formato Conventional Commits: `tipo(escopo): descrição`
+- Tipos: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`
+- Escopo: nome do serviço ou componente (ex: `usuario-service`, `shared`, `auth-service`)
+- Granularidade máxima com coerência — cada commit deve representar uma mudança atómica e independente
+- Sem referências a ferramentas de geração automática, agentes ou IA
+- Subject ≤ 72 chars; corpo opcional apenas quando o "porquê" não é óbvio
+
+---
+
 ## Estado Atual do Projeto
 
 ### Concluído (análise e design)
