@@ -1,13 +1,53 @@
-version: '3.8'
-
 services:
-  backend:
+
+  auditoria-db:
+    container_name: auditoria-db
+    image: postgres:16
+    env_file:
+      - ./backend/auditoria_service/.env
+    ports:
+      - 5433:5432
+    volumes:
+      - auditoria-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auditoria -d auditoria_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auditoria-service:
+    container_name: auditoria-service
     build:
-      context: .
+      context: ./backend/auditoria_service 
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - 8008:8008
+    env_file:
+      - ./backend/auditoria_service/.env
     volumes:
-      - ./backend/auth_service:/app
+      - ./backend/auditoria_service/app:/app
+    depends_on:
+      auditoria-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  
+  
+  rabbitmq:
+    container_name: erp_rabbitmq
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
     environment:
-      - DJANGO_SETTINGS_MODULE=auth_service.settings
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  auditoria-db-data:
