@@ -34,7 +34,7 @@ class MensalidadeService:
                 f"{MensalidadeService.CLIENTE_SERVICE_URL}"
                 "/api/clientes/?flagAssociado=true&ativo=true&page_size=1000",
                 headers={
-                    "Authorization": f"Bearer{token}"
+                    "Authorization": f"Bearer {token}"
                 },
                 timeout=10
             )
@@ -60,10 +60,10 @@ class MensalidadeService:
 
             #Verificar se já existe mensalidade para o mês vigente
             ja_existe = ContaReceber.objects.filter(
-                cliente_id = cliente_id,
-                tipo = "MENSALIDADE",
-                dataVencimento__year = hoje.year,
-                dataVencimento__month = hoje.month
+                clienteId=cliente_id,
+                tipo='MENSALIDADE',
+                dataVencimento__year=hoje.year,
+                dataVencimento__month=hoje.month
             ).exists()
 
             if ja_existe:
@@ -71,8 +71,8 @@ class MensalidadeService:
                 continue
 
             ContaReceber.objects.create(
-                cliente_id = cliente_id,
-                ordemServicoId = None,
+                clienteId=cliente_id,
+                ordemServicoId=None,
                 tipo = "MENSALIDADE",
                 valor = valor,
                 status = "ABERTA",
@@ -82,7 +82,7 @@ class MensalidadeService:
             geradas += 1
         
         publish_mensalidades_geradas(
-            mesReferencia = f"{hoje.year}--{hoje.month:02d}",
+            mesReferencia=f"{hoje.year}-{hoje.month:02d}",
             totalGeradas = str(geradas),
             totalIgnoradas = str(ignoradas)
         )
