@@ -11,6 +11,7 @@ from .serializers import (
 )
 from .publishers import publish_cliente_criado
 from .services.financeiro_client import FinanceiroServiceClient
+from .services.usuario_client import UsuarioServiceClient
 
 
 @extend_schema_view(
@@ -117,13 +118,32 @@ class ClienteDelegacaoView(APIView):
     @extend_schema(
         summary='Listar delegações do cliente',
         tags=['clientes'],
-        responses={200: ClienteDelegacaoSerializer(many=True)},
+        responses={
+            200: inline_serializer(
+                name='DelegacaoDoClienteResponse',
+                fields={
+                    'delegacaoId': serializers.UUIDField(),
+                    'nome': serializers.CharField(),
+                },
+                many=True,
+            )
+        },
     )
     def get(self, request, pk):
         get_object_or_404(Cliente, pk=pk)
         delegacoes = ClienteDelegacao.objects.filter(clienteId=pk)
-        serializer = ClienteDelegacaoSerializer(delegacoes, many=True)
-        return Response(serializer.data)
+
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        nomes = UsuarioServiceClient.mapa_nomes_delegacoes(token)
+
+        result = sorted(
+            [
+                {'delegacaoId': str(d.delegacaoId), 'nome': nomes.get(str(d.delegacaoId), str(d.delegacaoId))}
+                for d in delegacoes
+            ],
+            key=lambda x: x['nome'],
+        )
+        return Response(result)
 
     @extend_schema(
         summary='Associar cliente a delegação',
