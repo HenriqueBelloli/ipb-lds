@@ -46,19 +46,21 @@ def publish_pagamento_confirmado(conta : ContaReceber):
             exchange='financeiro',
             routing_key='financeiro.pagamento.entrada.confirmado',
             body={
-                'ordemServicoId':str(conta.ordemServicoId),
-                'contaReceberId':str(conta.id)
+                'servico': 'financeiro-service',
+                'osId': str(conta.ordemServicoId),
+                'contaReceberId': str(conta.id),
             }
         )
         return
-    
+
     publish(
         exchange='financeiro',
         routing_key='financeiro.conta.paga',
         body={
-            'contaReceberId':str(conta.id),
-            'clienteId':str(conta.clienteId),
-            'tipo':conta.tipo 
+            'servico': 'financeiro-service',
+            'contaReceberId': str(conta.id),
+            'clienteId': str(conta.clienteId),
+            'tipo': conta.tipo,
         }
     )
 
@@ -67,12 +69,13 @@ def publish_pagamento_confirmado(conta : ContaReceber):
 def publish_mensalidades_geradas(mesReferencia, totalGeradas, totalIgnoradas):
 
     publish(
-        exchange = 'financeiro',
-        routing_key = 'financeiro.mensalidades.geradas',
-        body = {
-            'mesReferencia' : mesReferencia,
-            'totalGeradas' : totalGeradas,
-            'totalIgnoradas' : totalIgnoradas
+        exchange='financeiro',
+        routing_key='financeiro.mensalidades.geradas',
+        body={
+            'servico': 'financeiro-service',
+            'mesReferencia': mesReferencia,
+            'totalGeradas': totalGeradas,
+            'totalIgnoradas': totalIgnoradas,
         }
     )
 
