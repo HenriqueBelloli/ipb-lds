@@ -3,8 +3,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 
-from shared.auth_middleware.permissions import IsOperador, IsFinanceiro
+from shared.auth_middleware.permissions import IsOperador
 
 from .models import OrdemServico, OrdemServicoHistorico
 from .serializers import (
@@ -42,6 +43,21 @@ class OrdemServicoListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(tipoPreco=params['tipoPreco'])
         return qs
 
+    @extend_schema(responses=OrdemServicoSerializer(many=True))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(request=OrdemServicoCreateSerializer, responses=OrdemServicoSerializer)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        os_obj = serializer.instance
+        return Response(
+            OrdemServicoSerializer(os_obj).data,
+            status=status.HTTP_201_CREATED,
+        )
+
     @transaction.atomic
     def perform_create(self, serializer):
         usuario_id = self.request.auth.get('usuarioId')
@@ -70,26 +86,34 @@ class OrdemServicoListCreateView(generics.ListCreateAPIView):
             'usuarioId': str(usuario_id),
         })
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        os_obj = serializer.instance
-        return Response(
-            OrdemServicoSerializer(os_obj).data,
-            status=status.HTTP_201_CREATED,
-        )
-
 
 class OrdemServicoDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsOperador]
     serializer_class = OrdemServicoSerializer
     queryset = OrdemServico.objects.all()
 
+    @extend_schema(responses=OrdemServicoSerializer)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(request=OrdemServicoSerializer, responses=OrdemServicoSerializer)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
 
 class OrdemServicoStatusView(APIView):
     permission_classes = [IsOperador]
 
+    @extend_schema(
+        request={'type': 'object', 'properties': {
+            'status': {'type': 'string', 'enum': [
+                'AGUARDA_APROVACAO', 'PAGAMENTO_PENDENTE', 'A_EXECUTAR',
+                'EM_EXECUCAO', 'CONCLUIDO', 'FATURADO', 'CANCELADO',
+            ]},
+            'observacao': {'type': 'string'},
+        }},
+        responses=OrdemServicoSerializer,
+    )
     @transaction.atomic
     def patch(self, request, pk):
         os = get_object_or_404(OrdemServico, pk=pk)
@@ -170,6 +194,10 @@ class OrdemServicoStatusView(APIView):
 class OrdemServicoCancelarView(APIView):
     permission_classes = [IsOperador]
 
+    @extend_schema(
+        request={'type': 'object', 'properties': {'motivo': {'type': 'string'}}},
+        responses=OrdemServicoSerializer,
+    )
     @transaction.atomic
     def patch(self, request, pk):
         os = get_object_or_404(OrdemServico, pk=pk)
@@ -225,6 +253,10 @@ class OrdemServicoHistoricoView(generics.ListAPIView):
     permission_classes = [IsOperador]
     serializer_class = OrdemServicoHistoricoSerializer
 
+    @extend_schema(responses=OrdemServicoHistoricoSerializer(many=True))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         os_id = self.kwargs['pk']
         get_object_or_404(OrdemServico, pk=os_id)
@@ -236,6 +268,10 @@ class OrdemServicoHistoricoView(generics.ListAPIView):
 class OrdemServicoPorDelegacaoView(generics.ListAPIView):
     permission_classes = [IsOperador]
     serializer_class = OrdemServicoSerializer
+
+    @extend_schema(responses=OrdemServicoSerializer(many=True))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         delegacao_id = self.kwargs['delegacaoId']
