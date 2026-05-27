@@ -28,29 +28,33 @@ class MensalidadeService:
         return Decimal(config.valor)
     
     @staticmethod
-    def buscar_associados_ativos(token):
+    def buscar_associados_ativos(token=None, internal_secret=None):
+        headers = {}
+        if internal_secret:
+            headers['X-Internal-Secret'] = internal_secret
+        elif token:
+            headers['Authorization'] = f'Bearer {token}'
+
         try:
             response = requests.get(
                 f"{MensalidadeService.CLIENTE_SERVICE_URL}"
                 "/api/clientes/?flagAssociado=true&ativo=true&page_size=1000",
-                headers={
-                    "Authorization": f"Bearer {token}"
-                },
+                headers=headers,
                 timeout=10
             )
 
             response.raise_for_status()
             return response.json().get('results', [])
-        
+
         except requests.exceptions.RequestException:
             return []
-    
+
     @staticmethod
     @transaction.atomic
-    def gerar_mensalidades(token=None):
+    def gerar_mensalidades(token=None, internal_secret=None):
         hoje = timezone.now().date()
         valor = MensalidadeService.obter_valor_mensalidade()
-        associados = MensalidadeService.buscar_associados_ativos(token)
+        associados = MensalidadeService.buscar_associados_ativos(token=token, internal_secret=internal_secret)
 
         geradas = 0
         ignoradas = 0
