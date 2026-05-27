@@ -17,6 +17,6 @@ COPY auditoria_service/app/ .
 COPY auditoria_service/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 8009
+EXPOSE 8008
 
 ENTRYPOINT ["/entrypoint.sh"]

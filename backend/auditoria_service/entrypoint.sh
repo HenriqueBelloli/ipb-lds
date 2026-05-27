@@ -6,4 +6,4 @@ until nc -z ${DB_HOST:-postgres-auditoria} ${DB_PORT:-5432}; do
 done
 
 python manage.py migrate --noinput
-exec gunicorn core.wsgi:application --bind 0.0.0.0:8009 --workers 2
+exec gunicorn core.wsgi:application --bind 0.0.0.0:8008 --workers 2
