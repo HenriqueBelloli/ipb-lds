@@ -1,7 +1,9 @@
 #!/bin/sh
 
-echo "Efetuando migracoes..."
-python manage.py migrate
-echo "Migracoes concluidas, iniciando gunicorn..."
+until nc -z ${DB_HOST:-db-financeiro} ${DB_PORT:-5432}; do
+  echo "Waiting for database..."
+  sleep 1
+done
 
-gunicorn core.wsgi:application --bind 0.0.0.0:8006 --workers 2
+python manage.py migrate --noinput
+exec gunicorn core.wsgi:application --bind 0.0.0.0:8006 --workers 2
