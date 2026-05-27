@@ -1,6 +1,6 @@
 from django.db import models
 import uuid
-from .validators import validar_percentual_entrada
+
 
 class Servico(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -11,16 +11,17 @@ class Servico(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'servicos'
+        db_table = 'servico'
         ordering = ['nome']
 
     def __str__(self):
         return self.nome
-    
+
+
 class ServicoDelegacao(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     servicoId = models.ForeignKey(Servico, on_delete=models.CASCADE, db_column='servicoId', related_name='delegacoes')
-    delegacaoId = models.UUIDField() # Referencia externa (apenas o UUID, não gera FK física)
+    delegacaoId = models.UUIDField()
     precoAssociado = models.DecimalField(max_digits=10, decimal_places=2)
     precoNaoAssociado = models.DecimalField(max_digits=10, decimal_places=2)
     percentualEntrada = models.DecimalField(max_digits=5, decimal_places=2, default=0)
@@ -28,8 +29,9 @@ class ServicoDelegacao(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'servicos_delegacoes'
+        db_table = 'servico_delegacao'
         unique_together = ('delegacaoId', 'servicoId')
+        ordering = ['servicoId__nome']
 
     def __str__(self):
         return f'{self.servicoId.nome} -> Delegação {self.delegacaoId}'
