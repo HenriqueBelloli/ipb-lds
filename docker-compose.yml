@@ -131,6 +131,17 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_notification_data:/var/lib/postgresql/data
+  
+  postgres-auditoria:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_auditoria
+    environment:
+      POSTGRES_DB: auditoria_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_auditoria_data:/var/lib/postgresql/data
+
 
   # ── Microsserviços ────────────────────────────────────────────────────────
   auth-service:
@@ -182,6 +193,34 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+  
+  auditoria-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_auditoria
+    build:
+      context: ./backend
+      dockerfile: auditoria_service/Dockerfile
+    environment:
+      DB_HOST: postgres-auditoria
+      DB_NAME: auditoria_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8008/api/auditoria/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8008:8008"
+    depends_on:
+      postgres-auditoria:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 
   # cliente-service: (em desenvolvimento — temporariamente desativado)
   #   <<: *service-defaults
@@ -250,3 +289,4 @@ volumes:
   postgres_financeiro_data:
   postgres_conciliacao_data:
   postgres_notification_data:
+  postgres_auditoria_data:
