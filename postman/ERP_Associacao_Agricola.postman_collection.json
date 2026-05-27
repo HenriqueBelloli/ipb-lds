@@ -1229,6 +1229,249 @@
             "response": []
           }
         ]
-      }
+      },
+    {
+      "name": "Servico Service",
+      "description": "Endpoints do serviço de catálogo de serviços e preços por delegação (servico-service — porta 8004).",
+      "item": [
+        {
+          "name": "Health - Servico Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                  "pm.test(\"Body contains service servico-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"servico-service\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/servicos/health/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "health", ""]
+            },
+            "description": "Verifica se o serviço está operacional. Não requer autenticação."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Serviços (Catálogo Global)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/servicos/?nome=&flagBonificavel=&ativo=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", ""],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "",
+                  "description": "Filtro por nome (busca parcial)",
+                  "disabled": true
+                },
+                {
+                  "key": "flagBonificavel",
+                  "value": "true",
+                  "description": "Filtro por bonificável (true/false)",
+                  "disabled": true
+                },
+                {
+                  "key": "ativo",
+                  "value": "true",
+                  "description": "Filtro por ativo (true/false)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista o catálogo global de serviços com filtros opcionais. Requer perfil OPERADOR ou superior."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Serviço",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Medição de Área\",\n  \"descricao\": \"Medição e levantamento de área de terreno.\",\n  \"flagBonificavel\": true,\n  \"ativo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/servicos/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", ""]
+            },
+            "description": "Cria um novo tipo de serviço no catálogo global. Requer perfil ADMINISTRADOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhe Serviço",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/servicos/{{servico_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "{{servico_id}}", ""],
+              "variable": [
+                {
+                  "key": "servico_id",
+                  "value": "",
+                  "description": "UUID do serviço"
+                }
+              ]
+            },
+            "description": "Obtém o detalhe completo de um serviço pelo ID. Requer perfil OPERADOR ou superior."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Serviço",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ativo\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/servicos/{{servico_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "{{servico_id}}", ""],
+              "variable": [
+                {
+                  "key": "servico_id",
+                  "value": "",
+                  "description": "UUID do serviço"
+                }
+              ]
+            },
+            "description": "Atualiza dados de um serviço, incluindo o campo ativo. Requer perfil ADMINISTRADOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Serviços por Delegação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/servicos/delegacao/{{delegacao_id}}/?tipoPreco=ASSOCIADO&ativo=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "delegacao", "{{delegacao_id}}", ""],
+              "query": [
+                {
+                  "key": "tipoPreco",
+                  "value": "ASSOCIADO",
+                  "description": "ASSOCIADO ou NAO_ASSOCIADO — calcula precoAplicado automaticamente"
+                },
+                {
+                  "key": "ativo",
+                  "value": "true",
+                  "description": "Filtro por ativo (true/false)",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "delegacao_id",
+                  "value": "",
+                  "description": "UUID da delegação"
+                }
+              ]
+            },
+            "description": "Lista serviços disponíveis numa delegação com preços. O parâmetro tipoPreco calcula precoAplicado automaticamente. Requer perfil OPERADOR ou superior."
+          },
+          "response": []
+        },
+        {
+          "name": "Configurar Serviço numa Delegação",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"servicoId\": \"{{servico_id}}\",\n  \"delegacaoId\": \"{{delegacao_id}}\",\n  \"precoAssociado\": \"25.00\",\n  \"precoNaoAssociado\": \"45.00\",\n  \"percentualEntrada\": \"20.00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/servicos/delegacao/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "delegacao", ""]
+            },
+            "description": "Configura um serviço numa delegação específica com preços e percentual de entrada. precoAssociado deve ser ≤ precoNaoAssociado. Requer perfil GESTOR ou superior."
+          },
+          "response": []
+        },
+        {
+          "name": "Detalhe Serviço numa Delegação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/servicos/delegacao/{{delegacao_id}}/{{servico_delegacao_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "delegacao", "{{delegacao_id}}", "{{servico_delegacao_id}}", ""],
+              "query": [
+                {
+                  "key": "tipoPreco",
+                  "value": "ASSOCIADO",
+                  "description": "ASSOCIADO ou NAO_ASSOCIADO — calcula precoAplicado automaticamente",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtém o detalhe de uma configuração serviço ↔ delegação específica. O parâmetro tipoPreco calcula precoAplicado automaticamente. Requer perfil OPERADOR ou superior."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Preços de Serviço numa Delegação",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precoAssociado\": \"22.00\",\n  \"precoNaoAssociado\": \"40.00\",\n  \"percentualEntrada\": \"15.00\",\n  \"ativo\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/servicos/delegacao/{{servico_delegacao_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "servicos", "delegacao", "{{servico_delegacao_id}}", ""],
+              "variable": [
+                {
+                  "key": "servico_delegacao_id",
+                  "value": "",
+                  "description": "UUID da configuração serviço-delegação"
+                }
+              ]
+            },
+            "description": "Atualiza preços, percentual de entrada e disponibilidade de um serviço numa delegação. Requer perfil GESTOR ou superior."
+          },
+          "response": []
+        }
+      ]
+    }
   ]
 }
