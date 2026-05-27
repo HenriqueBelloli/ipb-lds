@@ -107,7 +107,8 @@ push:
     - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
   script:
     - ssh "$SSH_USER@$SSH_HOST" "mkdir -p $DEPLOY_PATH"
-    - scp "$ENV_FILE" "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
+    - printf '%s\n' "$ENV_FILE" > /tmp/deploy.env
+    - scp /tmp/deploy.env "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
     - scp docker-compose.yml "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/docker-compose.yml"
     - scp -r reverse-proxy/ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/reverse-proxy"
     - |
