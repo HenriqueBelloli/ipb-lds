@@ -1,4 +1,3 @@
-# servico_service/urls.py
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.decorators import api_view, permission_classes
@@ -15,8 +14,8 @@ def health_check(request):
 urlpatterns = [
     path('api/servicos/health/', health_check, name='health-check'),
     path('api/servicos/', include('servicos.urls')),
-    path('api/servicos/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/servicos/schema/swagger-ui/',
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/',
          SpectacularSwaggerView.as_view(url_name='schema'),
          name='swagger-ui'),
 ]

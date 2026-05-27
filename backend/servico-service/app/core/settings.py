@@ -52,6 +52,19 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+            ],
+        },
+    },
+]
+
 SIMPLE_JWT = {
     'SIGNING_KEY': os.environ.get('JWT_SECRET_KEY', SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
