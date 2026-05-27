@@ -1,6 +1,6 @@
 #!/bin/sh
 
-until nc -z ${DB_HOST:-postgres-os} ${DB_PORT:-5432}; do
+until nc -z ${DB_HOST:-db-os} ${DB_PORT:-5432}; do
   echo "Waiting for database..."
   sleep 1
 done
