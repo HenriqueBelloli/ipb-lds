@@ -1007,6 +1007,228 @@
             "response": []
           }
         ]
+      },
+      {
+        "name": "Financeiro Service",
+        "description": "Endpoints do serviço financeiro (financeiro-service — porta 8006). Gestão de contas a receber, pagamentos, mensalidades e configurações financeiras. Todos os endpoints, exceto Health, requerem Bearer token JWT.",
+        "item": [
+          {
+            "name": "Health - Financeiro Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service financeiro-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"financeiro-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "health", ""]
+              },
+              "description": "Verifica se o serviço financeiro está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Contas a Receber",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ""],
+                "query": [
+                  {
+                    "key": "clienteId",
+                    "value": "",
+                    "description": "UUID do cliente — filtra contas do cliente específico.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "status",
+                    "value": "",
+                    "description": "Status da conta: ABERTA, PARCIAL, PAGA, VENCIDA.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "tipo",
+                    "value": "",
+                    "description": "Tipo de conta: ENTRADA, SALDO_FINAL, MENSALIDADE.",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista contas a receber com paginação. Suporta filtros por cliente, status e tipo. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Conta a Receber",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/:conta_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ":conta_id", ""],
+                "variable": [
+                  {
+                    "key": "conta_id",
+                    "value": "",
+                    "description": "UUID da conta a receber."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de uma conta a receber incluindo pagamentos registados. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Verificar Inadimplência",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/inadimplente/:cliente_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", "inadimplente", ":cliente_id", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Verifica se o cliente possui mensalidades em aberto ou vencidas no mês atual. Endpoint interno — usado por cliente-service para determinar tipoPreco na criação de OS. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Registar Pagamento",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"contaReceberId\": \"{{conta_id}}\",\n  \"valor\": \"250.50\",\n  \"referenciaBancaria\": \"TRANSF20240527001\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/pagamentos/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "pagamentos", ""]
+              },
+              "description": "Registra um novo pagamento para uma conta. Suporta pagamento parcial. Atualiza automaticamente o status da conta (PAGA, PARCIAL). Requer Bearer token JWT com perfil FINANCEIRO."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Pagamento",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/pagamentos/:pagamento_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "pagamentos", ":pagamento_id", ""],
+                "variable": [
+                  {
+                    "key": "pagamento_id",
+                    "value": "",
+                    "description": "UUID do pagamento."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de um pagamento registado. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Obter Configuração Mensalidade",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/configuracao/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "configuracao", ""]
+              },
+              "description": "Obtém o valor configurado para a mensalidade mensal dos associados. Retorna { chave: 'VALOR_MENSALIDADE', valor: '100.00' }. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Atualizar Configuração Mensalidade",
+            "request": {
+              "method": "PUT",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"valor\": \"150.00\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/configuracao/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "configuracao", ""]
+              },
+              "description": "Atualiza o valor configurado para a mensalidade mensal dos associados. Registra auditoria da alteração. Requer Bearer token JWT com perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Gerar Mensalidades (manual)",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/gerar/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "gerar", ""]
+              },
+              "description": "Dispara manualmente a geração de mensalidades do mês atual para todos os associados. Normalmente executa automaticamente no dia 1 de cada mês via scheduler. Retorna { total_geradas: N, periodo: 'YYYY-MM' }. Requer Bearer token JWT com perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Faturar Ordem de Serviço",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/:conta_id/faturar/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ":conta_id", "faturar", ""],
+                "variable": [
+                  {
+                    "key": "conta_id",
+                    "value": "",
+                    "description": "UUID da conta (SALDO_FINAL) associada à ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Marca uma conta como FATURADA após a conclusão de uma ordem de serviço. Transição final na máquina de estados da OS. Requer Bearer token JWT com perfil FINANCEIRO."
+            },
+            "response": []
+          }
+        ]
       }
   ]
 }
