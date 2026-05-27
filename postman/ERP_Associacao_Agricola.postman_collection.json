@@ -459,6 +459,113 @@
             "response": []
           }
         ]
+      },
+      {
+        "name": "Auditoria Service",
+        "description": "Endpoints do serviço de auditoria (auditoria-service — porta 8008). Log centralizado e imutável de todos os eventos do sistema. Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil ADMINISTRADOR.",
+        "item": [
+          {
+            "name": "Health - Auditoria Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service auditoria-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"auditoria-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", "health", ""]
+              },
+              "description": "Verifica se o serviço de auditoria está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Logs de Auditoria",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", ""],
+                "query": [
+                  {
+                    "key": "evento",
+                    "value": "",
+                    "description": "Routing key do evento (ex: os.cancelada, auth.login.failed).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "servico",
+                    "value": "",
+                    "description": "Nome do microserviço que publicou o evento (ex: os-service, auth-service).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "usuarioId",
+                    "value": "",
+                    "description": "UUID do utilizador associado ao evento. Null em eventos automáticos do sistema.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "delegacaoId",
+                    "value": "",
+                    "description": "UUID da delegação associada ao evento.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "dataInicio",
+                    "value": "",
+                    "description": "Data de início do período (formato YYYY-MM-DD, inclusive).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "dataFim",
+                    "value": "",
+                    "description": "Data de fim do período (formato YYYY-MM-DD, inclusive).",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista logs de auditoria com paginação (50 por página). Suporta filtros por evento, serviço, utilizador, delegação e período. Requer perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe de Log",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/:log_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", ":log_id", ""],
+                "variable": [
+                  {
+                    "key": "log_id",
+                    "value": "",
+                    "description": "UUID do registo de auditoria."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de um registo de auditoria, incluindo o payload original do evento sem modificações. Requer perfil ADMINISTRADOR."
+            },
+            "response": []
+          }
+        ]
       }
   ]
 }
