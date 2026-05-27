@@ -102,8 +102,14 @@ class ContasReceberFaturarView(APIView):
     def patch(self, request, pk):
         conta = self._get_object(pk)
 
+        input_serializer = ContasReceberFaturarInputSerializer(data=request.data)
+        if not input_serializer.is_valid():
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        valor_restante = input_serializer.validated_data['valorRestante']
+
         try:
-            saldo_final = FaturacaoService.faturar(conta.id)
+            saldo_final = FaturacaoService.faturar(conta.id, valor_restante=valor_restante)
         except ValidationError as e:
             return Response(
                 data={'message': e.message},

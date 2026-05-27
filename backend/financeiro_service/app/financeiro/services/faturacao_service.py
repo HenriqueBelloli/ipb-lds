@@ -18,41 +18,28 @@ class FaturacaoService:
 
     @staticmethod
     @transaction.atomic
-    def faturar(conta_receber_id):
+    def faturar(conta_receber_id, valor_restante=None):
+        conta = ContaReceber.objects.get(id=conta_receber_id)
 
-        conta = ContaReceber.objects.get(id = conta_receber_id)
-
-        #Verificar se já existe saldo final para esta OS
         if ContaReceber.objects.filter(
             ordemServicoId=conta.ordemServicoId,
             tipo='SALDO_FINAL'
         ).exists():
+            raise ValidationError('Esta OS já foi faturada anteriormente.')
+
+        if valor_restante is None:
             raise ValidationError(
-                'Esta OS já foi faturada anteriormente.'
+                'valorRestante é obrigatório para criar o saldo final. '
+                'Forneça o valor restante a receber após a entrada.'
             )
-        
-        """Precisa verificar se existe uma ContaReceber
-        da mesma OS com o tipo ENTRADA para reduzir o valor
-        do saldo final
-        
-        !!!Verificar se essa lógica está correta!!!
-        """
 
-        entrada = ContaReceber.objects.filter(
-            ordemServicoId = conta.ordemServicoId,
-            tipo = 'ENTRADA'
-        ).first()
-
-        valor_entrada = entrada.valor if entrada else 0
-        
-        #Gerar ContaReceber de saldo final
         saldo_final = ContaReceber.objects.create(
-            clienteId = conta.clienteId,
-            ordemServicoId = conta.ordemServicoId,
-            tipo = 'SALDO_FINAL',
-            valor = conta.valor - valor_entrada,
-            status = 'ABERTA',
-            dataVencimento = _calcular_data_vencimento()
+            clienteId=conta.clienteId,
+            ordemServicoId=conta.ordemServicoId,
+            tipo='SALDO_FINAL',
+            valor=valor_restante,
+            status='ABERTA',
+            dataVencimento=_calcular_data_vencimento()
         )
 
         return saldo_final

@@ -29,7 +29,7 @@ class ContasReceberErrorFaturarSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 class ContasReceberFaturarInputSerializer(serializers.Serializer):
-    pk = serializers.UUIDField()
+    valorRestante = serializers.DecimalField(max_digits=10, decimal_places=2)
 
 class ClienteInadimplenteSerializer(serializers.Serializer):
     inadimplente = serializers.BooleanField()

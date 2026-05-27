@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
 from .models import ContaReceber
+from .services.faturacao_service import _calcular_data_vencimento
 import json
 import pika
 import logging
@@ -45,7 +46,24 @@ def handle_os_aprovada(data):
     )
 
 def handle_os_concluida(data):
-    logger.info(f"OS concluída recebida: {data.get('osId')}")
+    os_id = data.get('osId')
+    cliente_id = data.get('clienteId')
+    valor_restante = Decimal(str(data.get('valorRestante', '0')))
+
+    if ContaReceber.objects.filter(ordemServicoId=os_id, tipo='SALDO_FINAL').exists():
+        return
+
+    if valor_restante <= 0:
+        return
+
+    ContaReceber.objects.create(
+        clienteId=cliente_id,
+        ordemServicoId=os_id,
+        tipo='SALDO_FINAL',
+        valor=valor_restante,
+        status='ABERTA',
+        dataVencimento=_calcular_data_vencimento()
+    )
 
 def handle_os_cancelada(data):
     logger.info(f"OS cancelada recebida: {data.get('osId')}")
