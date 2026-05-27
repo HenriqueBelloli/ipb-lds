@@ -19,7 +19,7 @@ class ContaReceber(models.Model):
 
     id = models.UUIDField(primary_key=True, auto_created=True, default=uuid.uuid4, editable=False)
     clienteId = models.UUIDField()
-    ordemServicoId = models.UUIDField(null=True, editable=True)
+    ordemServicoId = models.UUIDField(null=True, blank=True, editable=False)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     valorPago = models.DecimalField(max_digits=10, decimal_places=2, default=0)

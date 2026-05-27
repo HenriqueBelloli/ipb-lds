@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(auto_created=True, default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('clienteId', models.UUIDField()),
-                ('ordemServicoId', models.UUIDField(null=True)),
+                ('ordemServicoId', models.UUIDField(blank=True, null=True)),
                 ('tipo', models.CharField(choices=[('ENTRADA', 'Entrada'), ('SALDO_FINAL', 'Saldo Final'), ('MENSALIDADE', 'Mensalidade')], max_length=20)),
                 ('valor', models.DecimalField(decimal_places=2, max_digits=10)),
                 ('valorPago', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
