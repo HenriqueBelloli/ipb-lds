@@ -20,6 +20,10 @@ class RefreshRequestSerializer(serializers.Serializer):
 
 class RefreshResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
+    refresh = serializers.CharField()
+    usuarioId = serializers.UUIDField()
+    delegacaoId = serializers.UUIDField()
+    perfil = serializers.CharField()
 
 
 class MeSerializer(serializers.Serializer):
