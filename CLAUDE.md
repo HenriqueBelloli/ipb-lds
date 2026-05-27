@@ -434,7 +434,7 @@ Implementação completa em `backend/shared/rabbitmq.py`. Ver **shared/ — regr
 | # | Evento (routing key) | Publicado por | Consumido por | Dados |
 |---|---|---|---|---|
 | 1 | `auth.login.success` | auth-service | notification-service | {usuarioId, email, timestamp} |
-| 2 | `auth.login.failed` | auth-service | notification-service | {email, timestamp} |
+| 2 | `auth.login.failed` | auth-service | auditoria-service | {email, timestamp} |
 | 3 | `usuario.criado` | usuario-service | notification-service | {usuarioId, nome, perfil} |
 | 4 | `cliente.criado` | cliente-service | notification-service | {clienteId, nome, nif} |
 | 5 | `os.criada` | os-service | notification-service | {osId, clienteId, delegacaoId} |
@@ -442,7 +442,7 @@ Implementação completa em `backend/shared/rabbitmq.py`. Ver **shared/ — regr
 | 7 | `os.concluida` | os-service | financeiro-service | {osId, clienteId, valorRestante} |
 | 8 | `os.cancelada` | os-service | financeiro-service, notification-service | {osId, motivo} |
 | 9 | `financeiro.pagamento.entrada.confirmado` | financeiro-service | os-service | {osId, contaReceberId} |
-| 10 | `financeiro.conta.paga` | financeiro-service | notification-service | {contaReceberId, clienteId} |
+| 10 | `financeiro.conta.paga` | financeiro-service | auditoria-service | {contaReceberId, clienteId} |
 | 11 | `financeiro.mensalidades.geradas` | financeiro-service | notification-service | {total, mesReferencia} |
 
 ---

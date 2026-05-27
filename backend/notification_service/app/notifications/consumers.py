@@ -75,19 +75,6 @@ def handle_os_concluida(data):
     )
 
 
-def handle_conta_paga(data):
-    Notificacao.objects.create(
-        destinatarioId=None,
-        tipoDestinatario='SISTEMA',
-        canal='INTERNO',
-        titulo='Pagamento recebido',
-        mensagem=f"Conta {data.get('contaReceberId')} tipo {data.get('tipo')} totalmente liquidada.",
-        evento='financeiro.conta.paga',
-        payload=data,
-        enviado=True
-    )
-
-
 def handle_mensalidades_geradas(data):
     mes = data.get('mesReferencia')
     total = data.get('totalGeradas', 0)
@@ -139,26 +126,11 @@ def handle_usuario_criado(data):
     )
 
 
-def handle_login_failed(data):
-    Notificacao.objects.create(
-        destinatarioId=None,
-        tipoDestinatario='SISTEMA',
-        canal='INTERNO',
-        titulo='Tentativa de acesso falha',
-        mensagem=f"Tentativa falha de login para o email {data.get('email')} em {data.get('timestamp')}",
-        evento='auth.login.failed',
-        payload=data,
-        enviado=True
-    )
-
-
 HANDLERS = {
-    'auth.login.failed': handle_login_failed,
     'usuario.criado': handle_usuario_criado,
     'os.aprovada': handle_os_aprovada,
     'os.concluida': handle_os_concluida,
     'os.cancelada': handle_os_cancelada,
-    'financeiro.conta.paga': handle_conta_paga,
     'financeiro.mensalidades.geradas': handle_mensalidades_geradas,
 }
 
