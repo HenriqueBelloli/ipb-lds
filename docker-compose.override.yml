@@ -48,11 +48,6 @@ services:
   #     context: ./backend
   #     dockerfile: servico_service/Dockerfile
   #
-  # os-service:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: os_service/Dockerfile
-  #
   # conciliacao-service:
   #   build:
   #     context: ./backend
