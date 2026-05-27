@@ -1,0 +1,2 @@
+# Forçar LF em ficheiros executados em containers Linux
+*.sh text eol=lf
