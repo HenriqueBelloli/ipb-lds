@@ -15,7 +15,7 @@ class Cliente(models.Model):
 
     class Meta:
         ordering = ['nome']
-        db_table = 'clientes'
+        db_table = 'cliente'
 
     def __str__(self):
         return f'{self.nome} ({self.nif})'
@@ -29,7 +29,7 @@ class ClienteDelegacao(models.Model):
 
 
     class Meta:
-        db_table = 'cliente_delegacoes'
+        db_table = 'cliente_delegacao'
         unique_together = ['clienteId', 'delegacaoId']
         ordering = ['-createdAt']
 
