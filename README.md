@@ -11,6 +11,7 @@ cp .env.example .env
 ```
 
 O `.env` na raiz é partilhado por todos os serviços. As únicas variáveis que diferem por serviço (`DB_HOST`, `DB_NAME`) são injetadas diretamente no `docker-compose.yml`.
+O `notification-service` também lê `SMTP_HOST`, `SMTP_PORT` e `EMAIL_FROM` a partir desse `.env`, com os defaults de desenvolvimento `mailhog`, `1025` e `noreply@erp-associacao.pt`.
 
 ### 2. Subir containers
 
@@ -47,6 +48,18 @@ curl http://localhost:8002/api/usuarios/health/
 **Swagger docs:**
 ```
 http://localhost:8002/api/docs/
+```
+
+### 5. Testar notification-service
+
+**Health check:**
+```bash
+curl http://localhost:8009/api/notificacoes/health/
+```
+
+**Swagger docs:**
+```
+http://localhost:8009/api/docs/
 ```
 
 **Login de teste:**
@@ -113,7 +126,7 @@ docker-compose.yml              (orquestra tudo - infra + serviços)
 |----------|-----------|
 | `docker-compose.yml` | Orquestra auth, usuario, rabbitmq, nginx, postgresql |
 | `setup.sh` | Cria ficheiros `.env` do ambiente |
-| `.env.example` | Template das variáveis de auth-service |
+| `.env.example` | Template das variáveis partilhadas, incluindo SMTP do notification-service |
 | `CLAUDE.md` | Especificação completa (arquitetura, endpoints, modelos, regras de negócio) |
 
 ## Status de Implementação

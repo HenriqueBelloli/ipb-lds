@@ -322,7 +322,160 @@
           },
           "response": []
         }
-      ]
-    }
+        ]
+      },
+      {
+        "name": "Notification Service",
+          "description": "Endpoints do serviço de notificações (notification-service — porta 8009).",
+          "item": [
+              {
+                "name": "Health - Notification Service",
+                "event": [
+                  {
+                    "listen": "test",
+                    "script": {
+                      "exec": [
+                        "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                        "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                        "pm.test(\"Body contains service notification-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"notification-service\"); });"
+                      ],
+                      "type": "text/javascript"
+                    }
+                  }
+                ],
+                "request": {
+                  "auth": {
+                    "type": "noauth"
+                  },
+                  "method": "GET",
+                  "header": [],
+                  "url": {
+                    "raw": "{{base_url}}/api/notificacoes/health/",
+                    "host": [
+                      "{{base_url}}"
+                    ],
+                    "path": [
+                      "api",
+                      "notificacoes",
+                      "health",
+                      ""
+                    ]
+                  },
+                  "description": "Verifica se o serviço de notificações está operacional. Não requer autenticação."
+                },
+                "response": []
+              },
+            {
+              "name": "Listar Notificações",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/notificacoes/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notificacoes",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Detalhe Notificação",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/notificacoes/:notificacao_id/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notificacoes",
+                    ":notificacao_id",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Marcar Como Lida",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/notificacoes/:notificacao_id/ler/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notificacoes",
+                    ":notificacao_id",
+                    "ler",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Marcar Todas Como Lidas",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/notificacoes/ler-todas/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "notificacoes",
+                    "ler-todas",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
   ]
 }
