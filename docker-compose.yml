@@ -250,6 +250,36 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  os-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_os
+    build:
+      context: ./backend
+      dockerfile: os_service/Dockerfile
+    environment:
+      DB_HOST: postgres-os
+      DB_NAME: os_db
+      CLIENTE_SERVICE_URL: http://cliente-service:8003
+      SERVICO_SERVICE_URL: http://servico-service:8004
+      FINANCEIRO_SERVICE_URL: http://financeiro-service:8006
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8005/api/ordens/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8005:8005"
+    depends_on:
+      postgres-os:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   notification-service:
     <<: *service-defaults
     container_name: ldsgrupo1_notification
