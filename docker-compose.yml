@@ -43,6 +43,14 @@ services:
       retries: 10
       start_period: 60s
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ldsgrupo1_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   # ── Bases de dados ────────────────────────────────────────────────────────
   postgres-auth:
     <<: *postgres-defaults
@@ -191,6 +199,33 @@ services:
   #       condition: service_healthy
   #     rabbitmq:
   #       condition: service_healthy
+
+  notification-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_notification
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/notification-service:${IMAGE_TAG:-latest}
+    environment:
+      DB_HOST: postgres-notification
+      DB_NAME: notification_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8009/api/notificacoes/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8009:8009"
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
 
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:

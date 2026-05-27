@@ -25,7 +25,7 @@ Sistema ERP Web centralizado para uma associação agrícola com 9 delegações 
 
 ## Arquitetura — Microserviços
 
-### Microserviços a Implementar (8)
+### Microserviços a Implementar (9)
 
 | # | Serviço | Porta | Tipo | Responsabilidade |
 |---|---|---|---|---|
@@ -36,7 +36,8 @@ Sistema ERP Web centralizado para uma associação agrícola com 9 delegações 
 | 5 | os-service | 8005 | Core | Ordens de serviço, estados, histórico |
 | 6 | financeiro-service | 8006 | Core | Contas a receber, pagamentos, mensalidades |
 | 7 | conciliacao-service | 8007 | Core | Importação bancária, conciliação automática e manual |
-| 8 | notification-service | 8008 | Suporte | Consumidor de eventos RabbitMQ, alertas internos |
+| 8 | auditoria-service | 8008 | Suporte | Log de auditoria — consumidor de eventos RabbitMQ |
+| 9 | notification-service | 8009 | Suporte | Alertas internos — consumidor de eventos RabbitMQ |
 
 ### Infraestrutura de Suporte
 
@@ -54,7 +55,8 @@ Sistema ERP Web centralizado para uma associação agrícola com 9 delegações 
 /api/ordens/      → os-service:8005
 /api/financeiro/  → financeiro-service:8006
 /api/conciliacao/ → conciliacao-service:8007
-/api/notificacoes/→ notification-service:8008
+/api/auditoria/   → auditoria-service:8008
+/api/notificacoes/→ notification-service:8009
 /                 → frontend:3000
 ```
 
@@ -432,7 +434,7 @@ Implementação completa em `backend/shared/rabbitmq.py`. Ver **shared/ — regr
 | # | Evento (routing key) | Publicado por | Consumido por | Dados |
 |---|---|---|---|---|
 | 1 | `auth.login.success` | auth-service | notification-service | {usuarioId, email, timestamp} |
-| 2 | `auth.login.failed` | auth-service | notification-service | {email, timestamp} |
+| 2 | `auth.login.failed` | auth-service | auditoria-service | {email, timestamp} |
 | 3 | `usuario.criado` | usuario-service | notification-service | {usuarioId, nome, perfil} |
 | 4 | `cliente.criado` | cliente-service | notification-service | {clienteId, nome, nif} |
 | 5 | `os.criada` | os-service | notification-service | {osId, clienteId, delegacaoId} |
@@ -440,7 +442,7 @@ Implementação completa em `backend/shared/rabbitmq.py`. Ver **shared/ — regr
 | 7 | `os.concluida` | os-service | financeiro-service | {osId, clienteId, valorRestante} |
 | 8 | `os.cancelada` | os-service | financeiro-service, notification-service | {osId, motivo} |
 | 9 | `financeiro.pagamento.entrada.confirmado` | financeiro-service | os-service | {osId, contaReceberId} |
-| 10 | `financeiro.conta.paga` | financeiro-service | notification-service | {contaReceberId, clienteId} |
+| 10 | `financeiro.conta.paga` | financeiro-service | auditoria-service | {contaReceberId, clienteId} |
 | 11 | `financeiro.mensalidades.geradas` | financeiro-service | notification-service | {total, mesReferencia} |
 
 ---
@@ -528,7 +530,7 @@ POST   /api/conciliacao/manual/                → conciliar manualmente
 GET    /api/conciliacao/pendentes/             → movimentos por conciliar
 ```
 
-### notification-service (:8008)
+### notification-service (:8009)
 
 ```
 GET    /api/notificacoes/          → listar notificações
@@ -839,7 +841,7 @@ Quando adicionares um novo serviço, acrescentar o seu path aos `extraPaths`:
 6. **Todos os IDs são UUID** — nunca integer auto-increment
 7. **camelCase nos campos dos models** — conforme definido no ERD aprovado
 8. **Histórico de OS obrigatório** — qualquer transição de estado grava OrdemServicoHistorico
-9. **Log de auditoria via eventos** — notification-service regista todos os eventos RabbitMQ
+9. **Log de auditoria via eventos** — auditoria-service regista todos os eventos RabbitMQ; notification-service gere apenas alertas internos aos utilizadores
 10. **Scheduler de mensalidades** — corre no financeiro-service no dia 1 de cada mês
 11. **shared/ nunca duplicado** — contexto de build é sempre `./backend/`; Dockerfile copia `shared/` do central
 12. **auth_service como referência** — ao criar um novo serviço, seguir a estrutura de `backend/auth_service/` como template

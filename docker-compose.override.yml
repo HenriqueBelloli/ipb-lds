@@ -14,3 +14,8 @@ services:
     build:
       context: ./backend
       dockerfile: usuario_service/Dockerfile
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: notification_service/Dockerfile
