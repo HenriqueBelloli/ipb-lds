@@ -4,13 +4,17 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y netcat-openbsd curl && rm -rf /var/lib/apt/lists/*
 
+# Dependências — caminho relativo ao contexto de build (./backend/)
 COPY os_service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# shared/ central — copiado de backend/shared/ para /app/shared/
 COPY shared/ ./shared/
 
+# Código do serviço
 COPY os_service/app/ .
 
+# Entrypoint na raiz do container
 COPY os_service/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
