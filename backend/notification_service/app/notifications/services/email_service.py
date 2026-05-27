@@ -5,7 +5,7 @@ import os
 
 class EmailService:
     SMTP_HOST = os.environ.get('SMTP_HOST', 'mailhog')
-    SMTP_PORT = os.environ.get('SMTP_PORT', 1025)
+    SMTP_PORT = int(os.environ.get('SMTP_PORT', 1025))
     EMAIL_FROM = os.environ.get('EMAIL_FROM', 'noreply@erp-associacao.pt')
 
     @staticmethod

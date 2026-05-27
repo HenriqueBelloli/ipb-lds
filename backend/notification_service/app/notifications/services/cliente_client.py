@@ -14,11 +14,9 @@ class ClienteServiceClient:
 
         try:
             response = requests.get(
-                f"{ClienteServiceClient.BASE_URL}",
-                f"/api/clientes/{cliente_id}/",
-                headers= {
+                f"{ClienteServiceClient.BASE_URL}/api/clientes/{cliente_id}/",
+                headers={
                     "Authorization": f"Bearer {os.environ.get('INTERNAL_SERVICE_TOKEN')}"
-
                 },
                 timeout=5
             )
