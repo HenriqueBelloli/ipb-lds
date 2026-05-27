@@ -524,6 +524,248 @@
         ]
       },
       {
+        "name": "OS Service",
+        "description": "Endpoints do serviço de ordens de serviço (os-service — porta 8005). Gere o ciclo de vida completo das OS com state machine. Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil mínimo OPERADOR.",
+        "item": [
+          {
+            "name": "Health - OS Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service os-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"os-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/ordens/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", "health", ""]
+              },
+              "description": "Verifica se o serviço de ordens de serviço está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Ordens de Serviço",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/ordens/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ""],
+                "query": [
+                  {
+                    "key": "status",
+                    "value": "",
+                    "description": "Filtrar por estado (ex: ORCAMENTO, AGUARDA_APROVACAO, A_EXECUTAR, CONCLUIDO).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "delegacaoId",
+                    "value": "",
+                    "description": "UUID da delegação de execução.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "clienteId",
+                    "value": "",
+                    "description": "UUID do cliente.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "tipoPreco",
+                    "value": "",
+                    "description": "Filtrar por tipo de preço: ASSOCIADO ou NAO_ASSOCIADO.",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista ordens de serviço com paginação. Suporta filtros opcionais por query string. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Criar Ordem de Serviço",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"clienteId\": \"{{cliente_id}}\",\n  \"delegacaoExecucaoId\": \"{{delegacao_id}}\",\n  \"tipoPreco\": \"ASSOCIADO\",\n  \"itens\": [\n    {\n      \"servicoId\": \"{{servico_id}}\",\n      \"servicoDelegacaoId\": \"{{servico_delegacao_id}}\",\n      \"precoAplicado\": \"150.00\",\n      \"bonificado\": false\n    }\n  ]\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/ordens/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ""]
+              },
+              "description": "Cria uma nova OS com status inicial ORCAMENTO. O valorTotal é calculado automaticamente a partir dos itens não bonificados. Publica evento os.criada no RabbitMQ. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Ordem de Serviço",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/ordens/:os_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ":os_id", ""],
+                "variable": [
+                  {
+                    "key": "os_id",
+                    "value": "",
+                    "description": "UUID da ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de uma OS, incluindo os itens de serviço. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Actualizar Ordem de Serviço",
+            "request": {
+              "method": "PUT",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"clienteId\": \"{{cliente_id}}\",\n  \"delegacaoExecucaoId\": \"{{delegacao_id}}\",\n  \"tipoPreco\": \"ASSOCIADO\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/ordens/:os_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ":os_id", ""],
+                "variable": [
+                  {
+                    "key": "os_id",
+                    "value": "",
+                    "description": "UUID da ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Actualiza dados da OS. Não altera o estado — use o endpoint /status/ para transições. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Transicionar Estado da OS",
+            "request": {
+              "method": "PATCH",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"status\": \"AGUARDA_APROVACAO\",\n  \"observacao\": \"Enviado para aprovação do cliente\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/ordens/:os_id/status/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ":os_id", "status", ""],
+                "variable": [
+                  {
+                    "key": "os_id",
+                    "value": "",
+                    "description": "UUID da ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Transiciona o estado da OS segundo a state machine. Transições inválidas retornam 400. A transição PAGAMENTO_PENDENTE → A_EXECUTAR requer entrada paga no financeiro-service. Publica eventos os.aprovada, os.concluida ou os.status.atualizado consoante a transição. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Cancelar Ordem de Serviço",
+            "request": {
+              "method": "PATCH",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"motivo\": \"Cliente solicitou cancelamento\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/ordens/:os_id/cancelar/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ":os_id", "cancelar", ""],
+                "variable": [
+                  {
+                    "key": "os_id",
+                    "value": "",
+                    "description": "UUID da ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Cancela a OS com um motivo obrigatório. Bloqueado se a OS estiver FATURADO ou se existirem pagamentos registados (retorna 409). Publica evento os.cancelada. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Histórico de Estados da OS",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/ordens/:os_id/historico/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", ":os_id", "historico", ""],
+                "variable": [
+                  {
+                    "key": "os_id",
+                    "value": "",
+                    "description": "UUID da ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Retorna o histórico completo de transições de estado da OS, ordenado por data crescente. Transições automáticas via RabbitMQ aparecem com usuarioId null. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "OS por Delegação",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/ordens/delegacao/:delegacao_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "ordens", "delegacao", ":delegacao_id", ""],
+                "variable": [
+                  {
+                    "key": "delegacao_id",
+                    "value": "",
+                    "description": "UUID da delegação de execução."
+                  }
+                ]
+              },
+              "description": "Lista todas as OS cuja delegação de execução corresponde ao ID fornecido. Requer Bearer token JWT."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
         "name": "Auditoria Service",
         "description": "Endpoints do serviço de auditoria (auditoria-service — porta 8008). Log centralizado e imutável de todos os eventos do sistema. Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil ADMINISTRADOR.",
         "item": [
@@ -761,6 +1003,228 @@
                 "path": ["api", "notificacoes", "ler-todas", ""]
               },
               "description": "Marca como lidas todas as notificações acessíveis ao utilizador autenticado (destinatário direto e SISTEMA). Não requer body. Retorna a lista completa de notificações atualizada. Requer Bearer token JWT."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Financeiro Service",
+        "description": "Endpoints do serviço financeiro (financeiro-service — porta 8006). Gestão de contas a receber, pagamentos, mensalidades e configurações financeiras. Todos os endpoints, exceto Health, requerem Bearer token JWT.",
+        "item": [
+          {
+            "name": "Health - Financeiro Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service financeiro-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"financeiro-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "health", ""]
+              },
+              "description": "Verifica se o serviço financeiro está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Contas a Receber",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ""],
+                "query": [
+                  {
+                    "key": "clienteId",
+                    "value": "",
+                    "description": "UUID do cliente — filtra contas do cliente específico.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "status",
+                    "value": "",
+                    "description": "Status da conta: ABERTA, PARCIAL, PAGA, VENCIDA.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "tipo",
+                    "value": "",
+                    "description": "Tipo de conta: ENTRADA, SALDO_FINAL, MENSALIDADE.",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista contas a receber com paginação. Suporta filtros por cliente, status e tipo. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Conta a Receber",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/:conta_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ":conta_id", ""],
+                "variable": [
+                  {
+                    "key": "conta_id",
+                    "value": "",
+                    "description": "UUID da conta a receber."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de uma conta a receber incluindo pagamentos registados. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Verificar Inadimplência",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/inadimplente/:cliente_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", "inadimplente", ":cliente_id", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Verifica se o cliente possui mensalidades em aberto ou vencidas no mês atual. Endpoint interno — usado por cliente-service para determinar tipoPreco na criação de OS. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Registar Pagamento",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"contaReceberId\": \"{{conta_id}}\",\n  \"valor\": \"250.50\",\n  \"referenciaBancaria\": \"TRANSF20240527001\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/pagamentos/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "pagamentos", ""]
+              },
+              "description": "Registra um novo pagamento para uma conta. Suporta pagamento parcial. Atualiza automaticamente o status da conta (PAGA, PARCIAL). Requer Bearer token JWT com perfil FINANCEIRO."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Pagamento",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/pagamentos/:pagamento_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "pagamentos", ":pagamento_id", ""],
+                "variable": [
+                  {
+                    "key": "pagamento_id",
+                    "value": "",
+                    "description": "UUID do pagamento."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de um pagamento registado. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Obter Configuração Mensalidade",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/configuracao/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "configuracao", ""]
+              },
+              "description": "Obtém o valor configurado para a mensalidade mensal dos associados. Retorna { chave: 'VALOR_MENSALIDADE', valor: '100.00' }. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Atualizar Configuração Mensalidade",
+            "request": {
+              "method": "PUT",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"valor\": \"150.00\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/configuracao/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "configuracao", ""]
+              },
+              "description": "Atualiza o valor configurado para a mensalidade mensal dos associados. Registra auditoria da alteração. Requer Bearer token JWT com perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Gerar Mensalidades (manual)",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/mensalidades/gerar/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "mensalidades", "gerar", ""]
+              },
+              "description": "Dispara manualmente a geração de mensalidades do mês atual para todos os associados. Normalmente executa automaticamente no dia 1 de cada mês via scheduler. Retorna { total_geradas: N, periodo: 'YYYY-MM' }. Requer Bearer token JWT com perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Faturar Ordem de Serviço",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/financeiro/contas-receber/:conta_id/faturar/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "financeiro", "contas-receber", ":conta_id", "faturar", ""],
+                "variable": [
+                  {
+                    "key": "conta_id",
+                    "value": "",
+                    "description": "UUID da conta (SALDO_FINAL) associada à ordem de serviço."
+                  }
+                ]
+              },
+              "description": "Marca uma conta como FATURADA após a conclusão de uma ordem de serviço. Transição final na máquina de estados da OS. Requer Bearer token JWT com perfil FINANCEIRO."
             },
             "response": []
           }

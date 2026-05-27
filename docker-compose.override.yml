@@ -15,7 +15,40 @@ services:
       context: ./backend
       dockerfile: usuario_service/Dockerfile
 
+  auditoria-service:
+    build:
+      context: ./backend
+      dockerfile: auditoria_service/Dockerfile
+
+  cliente-service:
+    build:
+      context: ./backend
+      dockerfile: cliente_service/Dockerfile
+
+  financeiro-service:
+    build:
+      context: ./backend
+      dockerfile: financeiro_service/Dockerfile
+
+  os-service:
+    build:
+      context: ./backend
+      dockerfile: os_service/Dockerfile
+
   notification-service:
     build:
       context: ./backend
       dockerfile: notification_service/Dockerfile
+
+  # ── Serviços ainda não implementados ──────────────────────────────────────
+  # Adicionar as entradas abaixo quando os Dockerfiles estiverem disponíveis:
+  #
+  # servico-service:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: servico_service/Dockerfile
+  #
+  # conciliacao-service:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: conciliacao_service/Dockerfile
