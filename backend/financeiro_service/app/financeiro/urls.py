@@ -26,7 +26,7 @@ urlpatterns = [
 
     #pagamentos
     path('financeiro/pagamentos/os/<uuid:osId>/', VerificarPagamentosOSView.as_view()),
-    path('financeiro/pagamentos/', RegistrarPagamentoView.as_view()),
+    path('financeiro/contas-receber/<uuid:contaReceberId>/pagamentos/', RegistrarPagamentoView.as_view()),
     path('financeiro/pagamentos/<uuid:pagamentoId>/', PagamentoDetailView.as_view()),
 
     #mensalidade

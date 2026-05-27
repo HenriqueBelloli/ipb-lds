@@ -170,14 +170,13 @@ class RegistrarPagamentoView(APIView):
             400: RegistrarPagamentoErrorSerializer
         }
     )
-    def post(self, request):
-        conta_id = request.data.get('id')
+    def post(self, request, contaReceberId):
         valor = request.data.get('valor')
         referencia = request.data.get('referenciaBancaria')
         usuario_id = request.auth.get('usuarioId')
 
         try:
-            pagamento = PagamentoService.registrar(conta_id, valor, date.today(), referencia, usuario_id)
+            pagamento = PagamentoService.registrar(str(contaReceberId), valor, date.today(), referencia, usuario_id)
         except ValidationError as e:
             return Response(e.message, status=status.HTTP_400_BAD_REQUEST)
 
