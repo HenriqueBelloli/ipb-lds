@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, inline_seri
 from drf_spectacular.types import OpenApiTypes
 from django.shortcuts import get_object_or_404
 from shared.auth_middleware.permissions import IsOperador
+from shared.auth_middleware.drf_authentication import JWTStatelessAuthentication
+from shared.auth_middleware.internal_auth import InternalServiceAuthentication
 from .models import Cliente, ClienteDelegacao
 from .serializers import (
     ClienteSerializer, ClienteDetailSerializer, ClienteDelegacaoSerializer
@@ -35,6 +37,7 @@ from .services.usuario_client import UsuarioServiceClient
     ),
 )
 class ClienteListCreateView(generics.ListCreateAPIView):
+    authentication_classes = [InternalServiceAuthentication, JWTStatelessAuthentication]
     permission_classes = [IsOperador]
 
     def get_serializer_class(self):
