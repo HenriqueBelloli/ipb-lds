@@ -2,7 +2,8 @@ from django.shortcuts import get_object_or_404
 from .models import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import BasePermission, AllowAny
+from rest_framework.permissions import AllowAny
+from shared.auth_middleware.permissions import IsOperador, IsFinanceiro
 from .serializers import *
 from rest_framework import status
 from .services.faturacao_service import FaturacaoService
@@ -15,21 +16,14 @@ from datetime import date
 import uuid
 from drf_spectacular.utils import extend_schema
 
-# Create your views here.
 
 class ContasReceberListView(APIView):
-
-    #perfil minimo = financeiro
-    
-    permission_classes = [AllowAny]
+    permission_classes = [IsFinanceiro]
 
     def _convert_date(self, input_date):
         return datetime.strptime(input_date, "%Y%m%d").date()
 
-
-    @extend_schema(
-            responses=ContasReceberListSerializer(many=True)
-    )
+    @extend_schema(responses=ContasReceberListSerializer(many=True))
     def get(self, request):
         qs = ContaReceber.objects.all()
 
@@ -39,102 +33,91 @@ class ContasReceberListView(APIView):
         valor = request.query_params.get('valor')
         valorPago = request.query_params.get('valorPago')
         _status = request.query_params.get('status')
-
-        #Considerar que as datas devem vir num formato YYYYMMDD
         dataVencimentoDe = request.query_params.get('dataVencimentoDe')
         dataVencimentoAte = request.query_params.get('dataVencimentoAte')
 
-        #Tem que ter dataVencimentoDe e dataVencimentoAte (in)
-
         if cliente_id:
-            qs = qs.filter(cliente_id = cliente_id)
-        
+            qs = qs.filter(clienteId=cliente_id)
+
         if ordemServico_id:
-            qs = qs.filter(ordemServico_id = ordemServico_id)
-        
+            qs = qs.filter(ordemServicoId=ordemServico_id)
+
         if tipo:
-            qs = qs.filter(tipo = tipo)
-        
+            qs = qs.filter(tipo=tipo)
+
         if valor:
-            qs = qs.filter(valor = valor)
-        
+            qs = qs.filter(valor=valor)
+
         if valorPago:
-            qs = qs.filter(valorPago = valorPago)
+            qs = qs.filter(valorPago=valorPago)
 
         if _status:
-            qs = qs.filter(status = _status)
+            qs = qs.filter(status=_status)
 
         if dataVencimentoDe and dataVencimentoAte:
-            qs = qs.filter(dataVencimento__range = (self._convert_date(dataVencimentoDe), self._convert_date(dataVencimentoAte)))
-        
+            qs = qs.filter(dataVencimento__range=(
+                self._convert_date(dataVencimentoDe),
+                self._convert_date(dataVencimentoAte)
+            ))
         elif dataVencimentoDe:
-            qs = qs.filter(dataVencimento__gte = self._convert_date(dataVencimentoDe))
-
+            qs = qs.filter(dataVencimento__gte=self._convert_date(dataVencimentoDe))
         elif dataVencimentoAte:
-            qs = qs.filter(dataVencimento__lte = self._convert_date(dataVencimentoAte)) 
+            qs = qs.filter(dataVencimento__lte=self._convert_date(dataVencimentoAte))
 
         serializer = ContasReceberListSerializer(qs, many=True)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class ContasReceberDetailView(APIView):
-    #perfil minimo = financeiro
-    permission_classes = [AllowAny]
 
-    #arrumar a lógica do faturacao_service
+class ContasReceberDetailView(APIView):
+    permission_classes = [IsFinanceiro]
 
     def _get_object(self, pk):
         return get_object_or_404(ContaReceber, pk=pk)
 
     @extend_schema(
-            responses={
-                200: ContasReceberListSerializer(many=False),
-                404: ContasReceberDetailErrorSerializer
-                }
+        responses={
+            200: ContasReceberListSerializer(many=False),
+            404: ContasReceberDetailErrorSerializer
+        }
     )
     def get(self, request, pk):
         conta = self._get_object(pk)
         serializer = ContasReceberListSerializer(conta, many=False)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
 
 class ContasReceberFaturarView(APIView):
-    #perfil minimo = financeiro
-    permission_classes = [AllowAny]
+    permission_classes = [IsFinanceiro]
 
     def _get_object(self, pk):
         return get_object_or_404(ContaReceber, pk=pk)
-    
+
     @extend_schema(
-            request=ContasReceberFaturarInputSerializer,
-            responses={
-                201: ContasReceberListSerializer,
-                400: ContasReceberErrorFaturarSerializer
-                }
+        request=ContasReceberFaturarInputSerializer,
+        responses={
+            201: ContasReceberListSerializer,
+            400: ContasReceberErrorFaturarSerializer
+        }
     )
     def patch(self, request, pk):
         conta = self._get_object(pk)
-        id = conta.id
 
         try:
-            saldo_final = FaturacaoService.faturar(id)
+            saldo_final = FaturacaoService.faturar(conta.id)
         except ValidationError as e:
             return Response(
-                data = {'message': e.message}, #e.message funciona
+                data={'message': e.message},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         serializer = ContasReceberListSerializer(saldo_final)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-     
+
 
 class ClienteInadimplenteView(APIView):
-    #perfil minimo = Interno
+    permission_classes = [IsOperador]
 
-    @extend_schema(
-            responses=ClienteInadimplenteSerializer
-    )
+    @extend_schema(responses=ClienteInadimplenteSerializer)
     def get(self, request, clienteId):
         hoje = timezone.now().date()
 
@@ -150,179 +133,126 @@ class ClienteInadimplenteView(APIView):
 
 
 class VerificarEntradaPagaView(APIView):
-    #perfil minimo = interno
+    permission_classes = [IsOperador]
 
     def _get_object(self, osId) -> ContaReceber:
-        return get_object_or_404(
-            ContaReceber,
-            ordemServicoId = osId,
-            tipo = 'ENTRADA'
-        )
+        return get_object_or_404(ContaReceber, ordemServicoId=osId, tipo='ENTRADA')
 
-    @extend_schema(
-            responses=VerificarEntradaPagaSerializer
-    )
+    @extend_schema(responses=VerificarEntradaPagaSerializer)
     def get(self, request, osId):
-        
         conta = self._get_object(osId)
+        return Response({'paga': conta.status == 'PAGA'}, status=status.HTTP_200_OK)
 
-        entrada_paga = conta.status == 'PAGA'
-
-        return Response({'Entrada paga':entrada_paga}, status=status.HTTP_200_OK)
 
 class VerificarPagamentosOSView(APIView):
-    #perfil minimo = interno
+    permission_classes = [IsOperador]
 
-    @extend_schema(
-            responses = ContasReceberListSerializer(many=True)
-    )
+    @extend_schema(responses=ContasReceberListSerializer(many=True))
     def get(self, request, osId):
-        qs = ContaReceber.objects.filter(
-            ordemServicoId = osId
-        )
+        qs = ContaReceber.objects.filter(ordemServicoId=osId)
+        tem_pagamentos = Pagamento.objects.filter(contaReceberId__in=qs).exists()
+        return Response({'temPagamentos': tem_pagamentos}, status=status.HTTP_200_OK)
 
-        serializer = ContasReceberListSerializer(qs, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class RegistrarPagamentoView(APIView):
-    #perfil minimo = financeiro
+    permission_classes = [IsFinanceiro]
 
     @extend_schema(
-            request = PagamentoConfirmadoCreateSerializer,
-            responses = {
-                201: PagamentoConfirmadoCreateSerializer,
-                400: RegistrarPagamentoErrorSerializer
-                }
+        request=PagamentoConfirmadoCreateSerializer,
+        responses={
+            201: PagamentoConfirmadoCreateSerializer,
+            400: RegistrarPagamentoErrorSerializer
+        }
     )
     def post(self, request):
-
         conta_id = request.data.get('id')
         valor = request.data.get('valor')
-        data = date.today()
         referencia = request.data.get('referenciaBancaria')
-        usuario_id = request.data.get('usuarioId')
+        usuario_id = request.auth.get('usuarioId')
 
         try:
-            pagamento = PagamentoService.registrar(conta_id, valor, data, referencia, usuario_id)
+            pagamento = PagamentoService.registrar(conta_id, valor, date.today(), referencia, usuario_id)
         except ValidationError as e:
-            
             return Response(e.message, status=status.HTTP_400_BAD_REQUEST)
 
-
         serializer = PagamentoConfirmadoCreateSerializer(pagamento)
-
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 class PagamentoDetailView(APIView):
+    permission_classes = [IsFinanceiro]
 
     def _get_object(self, pagamentoId):
-        return get_object_or_404(Pagamento,
-                                 id = pagamentoId)
-    
+        return get_object_or_404(Pagamento, id=pagamentoId)
+
     @extend_schema(
-            responses = {
-                200: PagamentoViewSerializer,
-                400: PagamentoDetailErrorSerializer
-                }
+        responses={
+            200: PagamentoViewSerializer,
+            400: PagamentoDetailErrorSerializer
+        }
     )
     def get(self, request, pagamentoId):
-
         pagamento = self._get_object(pagamentoId)
-        
         serializer = PagamentoViewSerializer(pagamento)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MensalidadeDetailPutView(APIView):
-    # como CHAVE é unique só terá um VALOR_MENSALIDADE
-    #dentro de ConfiguracaoFinanceira
+    permission_classes = [IsFinanceiro]
 
     def _get_object(self, chave) -> ConfiguracaoFinanceira:
-        return get_object_or_404(
-            ConfiguracaoFinanceira,
-            chave=chave
-        )
+        return get_object_or_404(ConfiguracaoFinanceira, chave=chave)
 
-    @extend_schema(
-            responses = MensalidadeViewSerializer(many=False)
-    )
+    @extend_schema(responses=MensalidadeViewSerializer(many=False))
     def get(self, request):
-
-        mensalidade = self._get_object(chave="VALOR_MENSALIDADE")
-
+        mensalidade = self._get_object(chave='VALOR_MENSALIDADE')
         serializer = MensalidadeViewSerializer(mensalidade)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
-       
-    
+
     @extend_schema(
-            request = MensalidadeViewEntrySerializer,
-            responses = {
-                200: MensalidadeViewSerializer,
-                409: MensalidadePutErrorSerializer
-                }
+        request=MensalidadeViewEntrySerializer,
+        responses={
+            200: MensalidadeViewSerializer,
+            409: MensalidadePutErrorSerializer
+        }
     )
     def put(self, request):
-
         novo_valor = request.data.get('valor')
-        usuario_modificou = uuid.UUID(request.data.get('usuarioId'))
+        usuario_id = request.auth.get('usuarioId')
 
-        mensalidade = self._get_object(chave="VALOR_MENSALIDADE")
+        mensalidade = self._get_object(chave='VALOR_MENSALIDADE')
 
         if novo_valor == mensalidade.valor:
-            return Response(data={
-                "message": "O novo valor para a mensalidade é igual ao valor antigo"
-            }, status=status.HTTP_409_CONFLICT)
+            return Response(
+                data={'message': 'O novo valor para a mensalidade é igual ao valor antigo'},
+                status=status.HTTP_409_CONFLICT
+            )
 
         mensalidade.valor = novo_valor
         mensalidade.atualizadoEm = timezone.now()
-        mensalidade.usuarioId = usuario_modificou
-
-        mensalidade.save(update_fields=["valor", "atualizadoEm", "usuarioId"])
+        mensalidade.usuarioId = usuario_id
+        mensalidade.save(update_fields=['valor', 'atualizadoEm', 'usuarioId'])
 
         serializer = MensalidadeViewSerializer(mensalidade)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class GerarMensalidadesView(APIView):
+    permission_classes = [IsFinanceiro]
 
     @extend_schema(
-            request=None,
-            responses={
-                201: GerarMensalidadesSerializer,
-                400: GerarMensalidadesErrorSerializer
-                }
+        request=None,
+        responses={
+            201: GerarMensalidadesSerializer,
+            400: GerarMensalidadesErrorSerializer
+        }
     )
     def post(self, request):
-        
+        token = request.META.get('HTTP_AUTHORIZATION', '').replace('Bearer ', '')
+
         try:
-            res = MensalidadeService.gerar_mensalidades()
+            res = MensalidadeService.gerar_mensalidades(token=token)
         except ValueError as e:
-            return Response(
-                data=e.message,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
 
-
-        return Response(
-            data=res,
-            status=status.HTTP_201_CREATED
-        )
-
-
-
-    
-
-
-        
-
-
-
-
-
-
-
-
-
+        return Response(data=res, status=status.HTTP_201_CREATED)
