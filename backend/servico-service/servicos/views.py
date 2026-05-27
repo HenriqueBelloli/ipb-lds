@@ -1,54 +1,54 @@
-from rest_framework import generics
-from rest_framework.permissions import AllowAny
-#from rest_framework.permissions import IsAuthenticated
-# from django.shortcuts import render
+# servicos/views.py
+from rest_framework import generics, status
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from shared.auth_middleware.permissions import IsOperador, IsGestor, IsAdministrador
 from .models import Servico, ServicoDelegacao
 from .serializers import ServicoSerializer, ServicoDelegacaoSerializer
-# from shared.auth_middleware.permissions import IsAdministrador, IsGestor
 
-class ServicoListCreateView(generics.ListAPIView):
+
+class ServicoListCreateView(generics.ListCreateAPIView):
     serializer_class = ServicoSerializer
 
     def get_permissions(self):
         if self.request.method == 'POST':
+            return [IsAdministrador()]
+        return [IsOperador()]
 
-            return [IsAuthenticated(), IsAdministrador()]
-        return [IsAuthenticated()]
-    
     def get_queryset(self):
         queryset = Servico.objects.all()
-        params = self.request.query_params
-
-        nome = params.get('nome')
-        flag_bonificavel = params.get('flagBonificavel')
-        ativo = params.get('ativo')
+        nome = self.request.query_params.get('nome')
+        flag_bonificavel = self.request.query_params.get('flagBonificavel')
+        ativo = self.request.query_params.get('ativo')
 
         if nome:
-            queryset.filter(nome__icontains=nome)
+            queryset = queryset.filter(nome__icontains=nome)
         if flag_bonificavel is not None:
-            queryset = queryset.filter(flagBonificavel=flag_bonificavel.lower() == 'true')
+            queryset = queryset.filter(
+                flagBonificavel=flag_bonificavel.lower() == 'true'
+            )
         if ativo is not None:
             queryset = queryset.filter(ativo=ativo.lower() == 'true')
+        return queryset
 
-        return queryset.order_by('nome')
 
 class ServicoDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = ServicoSerializer
     queryset = Servico.objects.all()
 
-
     def get_permissions(self):
         if self.request.method == 'PUT':
-            return [IsAuthenticated(), IsAdministrador()]
-        return [IsAuthenticated()]
+            return [IsAdministrador()]
+        return [IsOperador()]
+
 
 class ServicoDelegacaoListCreateView(generics.ListCreateAPIView):
     serializer_class = ServicoDelegacaoSerializer
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAuthenticated(), IsGestor()]
-        return [IsAuthenticated()]
+            return [IsGestor()]
+        return [IsOperador()]
 
     def get_queryset(self):
         delegacao_id = self.kwargs.get('delegacaoId')
@@ -59,8 +59,7 @@ class ServicoDelegacaoListCreateView(generics.ListCreateAPIView):
         ativo = self.request.query_params.get('ativo')
         if ativo is not None:
             queryset = queryset.filter(ativo=ativo.lower() == 'true')
-
-        return queryset.order_by('servicoId__nome')
+        return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -74,8 +73,8 @@ class ServicoDelegacaoDetailView(generics.RetrieveUpdateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'PUT':
-            return [IsAuthenticated(), IsGestor()]
-        return [IsAuthenticated()]
+            return [IsGestor()]
+        return [IsOperador()]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

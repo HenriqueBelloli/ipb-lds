@@ -14,7 +14,7 @@ x-service: &service-defaults
     test:
       [
         "CMD-SHELL",
-        "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')\"",
+        'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000/health/'')"',
       ]
     interval: 15s
     timeout: 5s
@@ -24,7 +24,7 @@ x-service: &service-defaults
 services:
   # ── Infraestrutura ────────────────────────────────────────────────────────
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3.13-management
     container_name: ldsgrupo1_rabbitmq
     restart: unless-stopped
     env_file: .env
@@ -136,7 +136,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/api/auth/health/')\"",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8001/api/auth/health/'')"',
         ]
       interval: 15s
       timeout: 5s
@@ -163,7 +163,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/api/clientes/health/')\"",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8003/api/clientes/health/'')"',
         ]
       interval: 15s
       timeout: 5s
@@ -177,9 +177,36 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  servico-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_servico
+    build:
+      context: ./backend
+      dockerfile: servico-service/Dockerfile
+    environment:
+      DB_HOST: postgres-servico
+      DB_NAME: servico_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:8004/api/servicos/health/'')"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8004:8004"
+    depends_on:
+      postgres-servico:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.27
     container_name: ldsgrupo1_nginx
     restart: unless-stopped
     ports:
