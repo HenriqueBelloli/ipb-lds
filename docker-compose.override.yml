@@ -1,0 +1,21 @@
+# Este ficheiro é mesclado automaticamente pelo Docker Compose ao executar localmente.
+# Permite compilar os serviços sem depender do registry do CI.
+# Nunca é copiado para o servidor de deploy — apenas para uso em desenvolvimento.
+#
+# Uso: docker compose up --build
+
+services:
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth_service/Dockerfile
+
+  usuario-service:
+    build:
+      context: ./backend
+      dockerfile: usuario_service/Dockerfile
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: notification_service/Dockerfile
