@@ -45,9 +45,10 @@ def handle_os_aprovada(data):
     )
 
 def handle_os_concluida(data):
-    #os.concluida apenas registra
-    #faturacao é manual pelo Financeiro
-    pass
+    logger.info(f"OS concluída recebida: {data.get('osId')}")
+
+def handle_os_cancelada(data):
+    logger.info(f"OS cancelada recebida: {data.get('osId')}")
 
 def dispatch_event(
         ch,
@@ -55,12 +56,13 @@ def dispatch_event(
         properties,
         body
 ):
-    
+
     data = json.loads(body)
     routing_key = method.routing_key
     handlers = {
         'os.aprovada': handle_os_aprovada,
         'os.concluida': handle_os_concluida,
+        'os.cancelada': handle_os_cancelada,
     }
 
     handler = handlers.get(routing_key)
@@ -71,7 +73,7 @@ def start_consumer(
         queue_name,
         routing_keys,
         callback,
-        exchange = "events",
+        exchange = "erp_events",
         exchange_type = "topic",
         host = "rabbitmq",
         port = 5672,
@@ -145,8 +147,8 @@ def start_consumer(
 def iniciar_consumers():
     start_consumer(
         queue_name='financeiro_os_events',
-        routing_keys = ['os.aprovada', 'os.concluida'],
-        callback = dispatch_event
+        routing_keys=['os.aprovada', 'os.concluida', 'os.cancelada'],
+        callback=dispatch_event
     )
 
 
