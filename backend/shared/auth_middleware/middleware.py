@@ -35,12 +35,14 @@ class JWTMiddleware:
 
     def __call__(self, request):
         try:
-            raw_token = self._jwt_auth.get_raw_token(self._jwt_auth.get_header(request))
-            if raw_token is not None:
-                validated_token = self._jwt_auth.get_validated_token(raw_token)
-                payload = validated_token.payload
-                request.user = _JWTUser(payload)
-                request.auth = payload
+            header = self._jwt_auth.get_header(request)
+            if header is not None:
+                raw_token = self._jwt_auth.get_raw_token(header)
+                if raw_token is not None:
+                    validated_token = self._jwt_auth.get_validated_token(raw_token)
+                    payload = validated_token.payload
+                    request.user = _JWTUser(payload)
+                    request.auth = payload
         except (InvalidToken, AuthenticationFailed) as exc:
             logger.debug('JWT inválido ou ausente: %s', exc)
 
