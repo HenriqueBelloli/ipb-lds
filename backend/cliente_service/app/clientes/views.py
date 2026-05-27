@@ -8,7 +8,7 @@ from .models import Cliente, ClienteDelegacao
 from .serializers import (
     ClienteSerializer, ClienteDetailSerializer, ClienteDelegacaoSerializer
 )
-from shared.rabbitmq import publish_event
+from .publishers import publish_cliente_criado
 from .services.financeiro_client import FinanceiroServiceClient
 
 
@@ -53,15 +53,11 @@ class ClienteListCreateView(generics.ListCreateAPIView):
     )
     def perform_create(self, serializer):
         cliente = serializer.save()
-        publish_event('cliente.criado', {
-            'servico': 'cliente-service',
-            'clienteId': str(cliente.id),
-            'nome': cliente.nome,
-            'nif': cliente.nif,
-            'flagAssociado': cliente.flagAssociado,
-            'usuarioId': self.request.auth.get('usuarioId'),
-            'delegacaoId': self.request.auth.get('delegacaoId'),
-        })
+        publish_cliente_criado(
+            cliente,
+            self.request.auth.get('usuarioId'),
+            self.request.auth.get('delegacaoId'),
+        )
 
 
 class ClienteDetailView(generics.RetrieveUpdateAPIView):
