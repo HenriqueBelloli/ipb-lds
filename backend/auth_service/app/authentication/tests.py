@@ -71,12 +71,22 @@ class RefreshTests(APITestCase):
         self.url = reverse('auth-refresh')
         self.cred = _criar_credencial(email='refresh@test.com')
 
-    def test_refresh_valido_retorna_novo_access(self):
+    def test_refresh_valido_retorna_novo_access_com_dados(self):
         refresh = RefreshToken()
         refresh['usuarioId'] = str(self.cred.usuarioId)
+        refresh['delegacaoId'] = str(self.cred.delegacaoId)
+        refresh['perfil'] = self.cred.perfil
+        refresh['email'] = self.cred.email
+        refresh['ativo'] = self.cred.ativo
+        
         resp = self.client.post(self.url, {'refresh': str(refresh)})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn('access', resp.data)
+        self.assertIn('refresh', resp.data)
+        self.assertIn('usuarioId', resp.data)
+        self.assertIn('delegacaoId', resp.data)
+        self.assertIn('perfil', resp.data)
+        self.assertEqual(resp.data['perfil'], 'OPERADOR')
 
     def test_refresh_invalido_retorna_401(self):
         resp = self.client.post(self.url, {'refresh': 'token.invalido.aqui'})

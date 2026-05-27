@@ -27,6 +27,15 @@ def _gerar_tokens(credencial: Credencial) -> dict:
     }
 
 
+def _extrair_claims_refresh(refresh_token) -> dict:
+    """Extrai todos os claims customizados de um refresh token para retornar na resposta."""
+    return {
+        'usuarioId': refresh_token.get('usuarioId'),
+        'delegacaoId': refresh_token.get('delegacaoId'),
+        'perfil': refresh_token.get('perfil'),
+    }
+
+
 @extend_schema(request=LoginSerializer, responses={200: TokenResponseSerializer})
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -59,14 +68,37 @@ def login(request):
     return Response(tokens, status=status.HTTP_200_OK)
 
 
-@extend_schema(request=RefreshRequestSerializer, responses={200: RefreshResponseSerializer})
+@extend_schema(request=RefreshRequestSerializer, responses={200: TokenResponseSerializer})
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh(request):
     try:
         refresh_token = RefreshToken(request.data.get('refresh'))
-        access_token = str(refresh_token.access_token)
-        return Response({'access': access_token}, status=status.HTTP_200_OK)
+        
+        # O simplejwt.access_token copia claims automaticamente do refresh token,
+        # mas para garantir que todos os claims customizados estão presentes,
+        # verificamos e retornamos os dados que serão usados pelos outros serviços.
+        access_token = refresh_token.access_token
+        
+        # Verificar se os claims necessários estão no access token
+        # Se não estiverem, adicionar explicitamente
+        if 'usuarioId' not in access_token:
+            access_token['usuarioId'] = refresh_token.get('usuarioId')
+        if 'delegacaoId' not in access_token:
+            access_token['delegacaoId'] = refresh_token.get('delegacaoId')
+        if 'perfil' not in access_token:
+            access_token['perfil'] = refresh_token.get('perfil')
+        if 'email' not in access_token:
+            access_token['email'] = refresh_token.get('email')
+        if 'ativo' not in access_token:
+            access_token['ativo'] = refresh_token.get('ativo')
+        
+        claims = _extrair_claims_refresh(refresh_token)
+        return Response({
+            'access': str(access_token),
+            'refresh': str(refresh_token),
+            **claims,
+        }, status=status.HTTP_200_OK)
     except TokenError:
         return Response(
             {'detail': 'Token inválido ou expirado.'},
