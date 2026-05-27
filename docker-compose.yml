@@ -207,14 +207,14 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8009/api/auditoria/health/')\"",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8008/api/auditoria/health/')\"",
         ]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 90s
     ports:
-      - "8009:8009"
+      - "8008:8008"
     depends_on:
       postgres-auditoria:
         condition: service_healthy
