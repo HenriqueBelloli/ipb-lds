@@ -1,9 +1,5 @@
 """
-<<<<<<<< HEAD:backend/financeiro_service/app/core/urls.py
-URL configuration for core project.
-========
 URL configuration for usuario_service project.
->>>>>>>> develop:backend/usuario_service/app/core/urls.py
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -18,22 +14,11 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-<<<<<<<< HEAD:backend/financeiro_service/app/core/urls.py
-from django.contrib import admin
-========
->>>>>>>> develop:backend/usuario_service/app/core/urls.py
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
-<<<<<<<< HEAD:backend/financeiro_service/app/core/urls.py
-    path('admin/', admin.site.urls),
-    path('api/', include('financeiro.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(), name="schema"),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name = "schema"), name="swagger-ui"),
-========
     path('api/', include('usuarios.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name="schema"),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
->>>>>>>> develop:backend/usuario_service/app/core/urls.py
 ]

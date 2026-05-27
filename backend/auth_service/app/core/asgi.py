@@ -1,5 +1,5 @@
 """
-ASGI config for core project.
+ASGI config for auth_service project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

@@ -1,5 +1,5 @@
 """
-WSGI config for core project.
+WSGI config for auth_service project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
