@@ -1,0 +1,464 @@
+{
+  "info": {
+    "_postman_id": "c0a1b2c3-d4e5-4f60-a7b8-c9d0e1f2a3b4",
+    "name": "ERP Associação Agrícola — LDS Grupo 1",
+    "description": "Coleção unificada do ERP da Associação Agrícola. Faça primeiro Login (Auth Service) para os tokens serem guardados automaticamente. Todas as requests herdam o Bearer token da coleção.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth Service",
+      "description": "Endpoints do serviço de autenticação (auth-service — porta 8001). Execute Login primeiro para guardar os tokens.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/health/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "health", ""]
+            },
+            "description": "Verifica se o serviço está operacional. Não requer autenticação."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access) {",
+                  "    pm.environment.set('access_token', json.access);",
+                  "    pm.environment.set('refresh_token', json.refresh);",
+                  "    console.log('Tokens guardados nas variáveis de ambiente.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ldsgrupo1.pt\",\n  \"password\": \"Admin123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            },
+            "description": "Autentica o utilizador e devolve access token (15 min) e refresh token (7 dias). Os tokens são guardados automaticamente nas variáveis de ambiente pelo script de teste."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh", ""]
+            },
+            "description": "Renova o access token usando o refresh token. Não requer Bearer no header."
+          },
+          "response": []
+        },
+        {
+          "name": "Me (perfil do utilizador)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me", ""]
+            },
+            "description": "Devolve os dados do utilizador autenticado extraídos do JWT. Requer Bearer token."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 204) {",
+                  "    pm.environment.set('access_token', '');",
+                  "    pm.environment.set('refresh_token', '');",
+                  "    console.log('Tokens eliminados nas variáveis de ambiente.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout", ""]
+            },
+            "description": "Invalida o refresh token (blacklist). Requer Bearer token no header."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuario Service",
+      "description": "Endpoints do serviço de utilizadores e delegações (usuario-service — porta 8002).",
+      "item": [
+        {
+          "name": "CriarUsuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Pedro5\",\n    \"email\": \"pedro5@teste.pt\",\n    \"password\": \"password12345\",\n    \"perfil\": \"OPERADOR\",\n    \"delegacaoId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/usuarios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "usuarios", ""]
+            },
+            "description": "Cria um novo utilizador no sistema. Requer perfil ADMINISTRADOR."
+          },
+          "response": []
+        },
+        {
+          "name": "ListarUsuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/usuarios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "usuarios", ""]
+            },
+            "description": "Lista todos os utilizadores. Filtrado pela delegação do token para OPERADOR/GESTOR."
+          },
+          "response": []
+        },
+        {
+          "name": "UsuarioDetalhes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/usuarios/:usuario_id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "usuarios", ":usuario_id", ""]
+            },
+            "description": "Obtém o detalhe de um utilizador pelo ID."
+          },
+          "response": []
+        },
+        {
+          "name": "AtualizarUsuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ativo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/usuarios/:usuario_id/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "usuarios", ":usuario_id", ""]
+            },
+            "description": "Atualiza dados de um utilizador, incluindo o campo ativo."
+          },
+          "response": []
+        },
+        {
+          "name": "CriarDelegacao",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"codigo\": \"D1\",\n    \"nome\": \"Delegacao\",\n    \"localizacao\": \"Localizacao\",\n    \"responsavelId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/delegacoes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "delegacoes", ""]
+            },
+            "description": "Cria uma nova delegação. Requer perfil ADMINISTRADOR."
+          },
+          "response": []
+        },
+        {
+          "name": "ListarDelegacoes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/delegacoes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "delegacoes", ""]
+            },
+            "description": "Lista todas as delegações existentes."
+          },
+          "response": []
+        },
+        {
+          "name": "AtualizarDelegacao",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"NovoNomeDaDelegacao\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/delegacoes/{{delegacao_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "delegacoes", "{{delegacao_id}}", ""]
+            },
+            "description": "Atualiza os dados de uma delegação."
+          },
+          "response": []
+        }
+      ,
+        {
+          "name": "Health - Usuario Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                  "pm.test(\"Body contains service usuario-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"usuario-service\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/usuarios/health/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "usuarios", "health", ""]
+            },
+            "description": "Verifica se o serviço de usuarios está operacional. Não requer autenticação."
+          },
+          "response": []
+        }
+        ]
+      },
+      {
+        "name": "Notification Service",
+        "description": "Endpoints do serviço de notificações (notification-service — porta 8009). Todos os endpoints, exceto Health, requerem Bearer token JWT.",
+        "item": [
+          {
+            "name": "Health - Notification Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service notification-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"notification-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", "health", ""]
+              },
+              "description": "Verifica se o serviço de notificações está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Notificações",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ""],
+                "query": [
+                  {
+                    "key": "lida",
+                    "value": "",
+                    "description": "Filtra por estado de leitura: true ou false.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "canal",
+                    "value": "",
+                    "description": "Filtra por canal: INTERNO ou EMAIL.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "tipoDestinatario",
+                    "value": "",
+                    "description": "Filtra por tipo de destinatário: USUARIO, CLIENTE ou SISTEMA.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "destinatarioId",
+                    "value": "",
+                    "description": "UUID do destinatário (userId ou clienteId).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "evento",
+                    "value": "",
+                    "description": "Routing key do evento RabbitMQ (ex: auth.login.success).",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista notificações do utilizador autenticado (destinatário direto) e notificações de sistema (tipoDestinatario=SISTEMA). Suporta filtros opcionais por query string. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Notificação",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/:notificacao_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ":notificacao_id", ""],
+                "variable": [
+                  {
+                    "key": "notificacao_id",
+                    "value": "",
+                    "description": "UUID da notificação."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe de uma notificação acessível ao utilizador autenticado. Retorna 404 se não existir ou não pertencer ao utilizador. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Marcar Como Lida",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/:notificacao_id/ler/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ":notificacao_id", "ler", ""],
+                "variable": [
+                  {
+                    "key": "notificacao_id",
+                    "value": "",
+                    "description": "UUID da notificação."
+                  }
+                ]
+              },
+              "description": "Marca uma notificação como lida. Não requer body. Retorna 409 se já estiver marcada como lida. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Marcar Todas Como Lidas",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/ler-todas/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", "ler-todas", ""]
+              },
+              "description": "Marca como lidas todas as notificações acessíveis ao utilizador autenticado (destinatário direto e SISTEMA). Não requer body. Retorna a lista completa de notificações atualizada. Requer Bearer token JWT."
+            },
+            "response": []
+          }
+        ]
+      }
+  ]
+}

@@ -1,5 +1,5 @@
 x-postgres: &postgres-defaults
-  image: postgres:16-alpine
+  image: postgres:16
   restart: unless-stopped
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d $$POSTGRES_DB"]
@@ -24,7 +24,7 @@ x-service: &service-defaults
 services:
   # ── Infraestrutura ────────────────────────────────────────────────────────
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3.13-management
     container_name: ldsgrupo1_rabbitmq
     restart: unless-stopped
     env_file: .env
@@ -37,11 +37,19 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 60s
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ldsgrupo1_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   # ── Bases de dados ────────────────────────────────────────────────────────
   postgres-auth:
@@ -64,15 +72,15 @@ services:
     volumes:
       - postgres_usuario_data:/var/lib/postgresql/data
 
-  postgres-cliente:
-    <<: *postgres-defaults
-    container_name: ldsgrupo1_db_cliente
-    environment:
-      POSTGRES_DB: cliente_db
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    volumes:
-      - postgres_cliente_data:/var/lib/postgresql/data
+  # postgres-cliente: (cliente-service em desenvolvimento — temporariamente desativado)
+  #   <<: *postgres-defaults
+  #   container_name: ldsgrupo1_db_cliente
+  #   environment:
+  #     POSTGRES_DB: cliente_db
+  #     POSTGRES_USER: ${DB_USER:-postgres}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+  #   volumes:
+  #     - postgres_cliente_data:/var/lib/postgresql/data
 
   postgres-servico:
     <<: *postgres-defaults
@@ -161,29 +169,27 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  cliente-service:
+  usuario-service:
     <<: *service-defaults
-    container_name: ldsgrupo1_cliente
-    build:
-      context: ./backend
-      dockerfile: cliente_service/Dockerfile
+    container_name: ldsgrupo1_usuario
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/usuario-service:${IMAGE_TAG:-latest}
     environment:
-      DB_HOST: postgres-cliente
-      DB_NAME: cliente_db
+      DB_HOST: postgres-usuario
+      DB_NAME: usuario_db
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/api/clientes/health/')\"",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/api/usuarios/health/')\"",
         ]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 90s
     ports:
-      - "8003:8003"
+      - "8002:8002"
     depends_on:
-      postgres-cliente:
+      postgres-usuario:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -216,9 +222,53 @@ services:
         condition: service_healthy
 
 
+  # cliente-service: (em desenvolvimento — temporariamente desativado)
+  #   <<: *service-defaults
+  #   container_name: ldsgrupo1_cliente
+  #   build:
+  #     context: ./backend
+  #     dockerfile: cliente_service/Dockerfile
+  #   environment:
+  #     DB_HOST: postgres-cliente
+  #     DB_NAME: cliente_db
+  #   ports:
+  #     - "8003:8003"
+  #   depends_on:
+  #     postgres-cliente:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+
+  notification-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_notification
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/notification-service:${IMAGE_TAG:-latest}
+    environment:
+      DB_HOST: postgres-notification
+      DB_NAME: notification_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8009/api/notificacoes/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8009:8009"
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.27
     container_name: ldsgrupo1_nginx
     restart: unless-stopped
     ports:
@@ -233,7 +283,7 @@ volumes:
   rabbitmq_data:
   postgres_auth_data:
   postgres_usuario_data:
-  postgres_cliente_data:
+  # postgres_cliente_data:
   postgres_servico_data:
   postgres_os_data:
   postgres_financeiro_data:
