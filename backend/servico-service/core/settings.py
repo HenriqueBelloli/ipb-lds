@@ -26,8 +26,8 @@ MIDDLEWARE = [
     # NÃO adicionar JWTMiddleware — usar JWTStatelessAuthentication no DRF
 ]
 
-ROOT_URLCONF = 'servico_service.urls'
-WSGI_APPLICATION = 'servico_service.wsgi.application'
+ROOT_URLCONF = 'core.urls'
+WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': {
