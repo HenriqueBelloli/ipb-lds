@@ -114,15 +114,16 @@ services:
     volumes:
       - postgres_financeiro_data:/var/lib/postgresql/data
 
-  postgres-conciliacao:
-    <<: *postgres-defaults
-    container_name: ldsgrupo1_db_conciliacao
-    environment:
-      POSTGRES_DB: conciliacao_db
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    volumes:
-      - postgres_conciliacao_data:/var/lib/postgresql/data
+  # conciliacao-service não será implementado — desativado
+  # postgres-conciliacao:
+  #   <<: *postgres-defaults
+  #   container_name: ldsgrupo1_db_conciliacao
+  #   environment:
+  #     POSTGRES_DB: conciliacao_db
+  #     POSTGRES_USER: ${DB_USER:-postgres}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+  #   volumes:
+  #     - postgres_conciliacao_data:/var/lib/postgresql/data
 
   postgres-notification:
     <<: *postgres-defaults
@@ -357,32 +358,32 @@ services:
   #     rabbitmq:
   #       condition: service_healthy
 
-  conciliacao-service:
-    <<: *service-defaults
-    container_name: ldsgrupo1_conciliacao
-    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/conciliacao-service:${IMAGE_TAG:-latest}
-    environment:
-      DB_HOST: postgres-conciliacao
-      DB_NAME: conciliacao_db
-      FINANCEIRO_SERVICE_URL: http://financeiro-service:8006
-      CLIENTE_SERVICE_URL: http://cliente-service:8003
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8007/api/conciliacao/health/')\"",
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 90s
-    ports:
-      - "8007:8007"
-    depends_on:
-      postgres-conciliacao:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+  # conciliacao-service:
+  #   <<: *service-defaults
+  #   container_name: ldsgrupo1_conciliacao
+  #   image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/conciliacao-service:${IMAGE_TAG:-latest}
+  #   environment:
+  #     DB_HOST: postgres-conciliacao
+  #     DB_NAME: conciliacao_db
+  #     FINANCEIRO_SERVICE_URL: http://financeiro-service:8006
+  #     CLIENTE_SERVICE_URL: http://cliente-service:8003
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8007/api/conciliacao/health/')\"",
+  #       ]
+  #     interval: 15s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 90s
+  #   ports:
+  #     - "8007:8007"
+  #   depends_on:
+  #     postgres-conciliacao:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
 
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   nginx:
@@ -406,8 +407,8 @@ services:
       #   condition: service_healthy
       financeiro-service:
         condition: service_healthy
-      conciliacao-service:
-        condition: service_healthy
+      # conciliacao-service:
+      #   condition: service_healthy
       auditoria-service:
         condition: service_healthy
       notification-service:
@@ -421,6 +422,6 @@ volumes:
   # postgres_servico_data:
   # postgres_os_data:
   postgres_financeiro_data:
-  postgres_conciliacao_data:
+  # postgres_conciliacao_data:
   postgres_notification_data:
   postgres_auditoria_data:
