@@ -1,11 +1,23 @@
-from django.shortcuts import render
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 from .models import LogAuditoria
 from .serializers import LogAuditoriaSerializer
-# Create your views here.
-
 from shared.auth_middleware.permissions import IsAdministrador
+
+
+@extend_schema(
+    responses={200: {'type': 'object', 'properties': {'status': {'type': 'string'}, 'service': {'type': 'string'}}}},
+    tags=['health'],
+    auth=[],
+    description='Verifica se o serviço está operacional. Não requer autenticação.',
+)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health(request):
+    return Response({'status': 'ok', 'service': 'auditoria-service'})
 
 
 class LogAuditoriaListView(generics.ListAPIView):
@@ -41,4 +53,4 @@ class LogAuditoriaDetailView(generics.RetrieveAPIView):
     serializer_class = LogAuditoriaSerializer
     permission_classes = [IsAuthenticated, IsAdministrador]
     queryset = LogAuditoria.objects.all()
-
+    lookup_field = 'id'
