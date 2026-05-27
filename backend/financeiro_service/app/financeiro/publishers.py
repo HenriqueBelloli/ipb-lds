@@ -43,7 +43,7 @@ def publish_pagamento_confirmado(conta : ContaReceber):
 
     if conta.tipo == 'ENTRADA':
         publish(
-            exchange='financeiro',
+            exchange='erp_events',
             routing_key='financeiro.pagamento.entrada.confirmado',
             body={
                 'servico': 'financeiro-service',
@@ -54,7 +54,7 @@ def publish_pagamento_confirmado(conta : ContaReceber):
         return
 
     publish(
-        exchange='financeiro',
+        exchange='erp_events',
         routing_key='financeiro.conta.paga',
         body={
             'servico': 'financeiro-service',
@@ -69,7 +69,7 @@ def publish_pagamento_confirmado(conta : ContaReceber):
 def publish_mensalidades_geradas(mesReferencia, totalGeradas, totalIgnoradas):
 
     publish(
-        exchange='financeiro',
+        exchange='erp_events',
         routing_key='financeiro.mensalidades.geradas',
         body={
             'servico': 'financeiro-service',
