@@ -253,9 +253,7 @@ services:
   os-service:
     <<: *service-defaults
     container_name: ldsgrupo1_os
-    build:
-      context: ./backend
-      dockerfile: os_service/Dockerfile
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/os-service:${IMAGE_TAG:-latest}
     environment:
       DB_HOST: postgres-os
       DB_NAME: os_db
