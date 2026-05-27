@@ -82,16 +82,15 @@ services:
     volumes:
       - postgres_cliente_data:/var/lib/postgresql/data
 
-  # servico-service não implementado — desativado temporariamente
-  # postgres-servico:
-  #   <<: *postgres-defaults
-  #   container_name: ldsgrupo1_db_servico
-  #   environment:
-  #     POSTGRES_DB: servico_db
-  #     POSTGRES_USER: ${DB_USER:-postgres}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-  #   volumes:
-  #     - postgres_servico_data:/var/lib/postgresql/data
+  postgres-servico:
+    <<: *postgres-defaults
+    container_name: ldsgrupo1_db_servico
+    environment:
+      POSTGRES_DB: servico_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_servico_data:/var/lib/postgresql/data
 
   postgres-os:
     <<: *postgres-defaults
@@ -331,31 +330,31 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
-
-  # servico-service:
-  #   <<: *service-defaults
-  #   container_name: ldsgrupo1_servico
-  #   image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/servico-service:${IMAGE_TAG:-latest}
-  #   environment:
-  #     DB_HOST: postgres-servico
-  #     DB_NAME: servico_db
-  #   healthcheck:
-  #     test:
-  #       [
-  #         "CMD-SHELL",
-  #         "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/api/servicos/health/')\"",
-  #       ]
-  #     interval: 15s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 90s
-  #   ports:
-  #     - "8004:8004"
-  #   depends_on:
-  #     postgres-servico:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
+  
+  servico-service:
+    <<: *service-defaults
+    container_name: ldsgrupo1_servico
+    image: ${CI_REGISTRY_IMAGE:-ldsgrupo1-local}/backend/servico-service:${IMAGE_TAG:-latest}
+    environment:
+      DB_HOST: postgres-servico
+      DB_NAME: servico_db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/api/servicos/health/')\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    ports:
+      - "8004:8004"
+    depends_on:
+      postgres-servico:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 
   # conciliacao-service:
@@ -401,8 +400,8 @@ services:
         condition: service_healthy
       cliente-service:
         condition: service_healthy
-      # servico-service:
-      #   condition: service_healthy
+      servico-service:
+        condition: service_healthy
       os-service:
         condition: service_healthy
       financeiro-service:
@@ -419,9 +418,10 @@ volumes:
   postgres_auth_data:
   postgres_usuario_data:
   postgres_cliente_data:
-  # postgres_servico_data:
+  postgres_servico_data:
   postgres_os_data:
   postgres_financeiro_data:
   # postgres_conciliacao_data:
   postgres_notification_data:
   postgres_auditoria_data:
+
