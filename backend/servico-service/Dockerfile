@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY shared/ ./shared/
 
 # Código do serviço
-COPY servico-service/ .
+COPY servico-service/app .
 
 COPY servico-service/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
