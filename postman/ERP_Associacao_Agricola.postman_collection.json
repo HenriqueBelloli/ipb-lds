@@ -326,156 +326,139 @@
       },
       {
         "name": "Notification Service",
-          "description": "Endpoints do serviço de notificações (notification-service — porta 8009).",
-          "item": [
+        "description": "Endpoints do serviço de notificações (notification-service — porta 8009). Todos os endpoints, exceto Health, requerem Bearer token JWT.",
+        "item": [
+          {
+            "name": "Health - Notification Service",
+            "event": [
               {
-                "name": "Health - Notification Service",
-                "event": [
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service notification-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"notification-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", "health", ""]
+              },
+              "description": "Verifica se o serviço de notificações está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Notificações",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ""],
+                "query": [
                   {
-                    "listen": "test",
-                    "script": {
-                      "exec": [
-                        "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
-                        "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
-                        "pm.test(\"Body contains service notification-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"notification-service\"); });"
-                      ],
-                      "type": "text/javascript"
-                    }
-                  }
-                ],
-                "request": {
-                  "auth": {
-                    "type": "noauth"
+                    "key": "lida",
+                    "value": "",
+                    "description": "Filtra por estado de leitura: true ou false.",
+                    "disabled": true
                   },
-                  "method": "GET",
-                  "header": [],
-                  "url": {
-                    "raw": "{{base_url}}/api/notificacoes/health/",
-                    "host": [
-                      "{{base_url}}"
-                    ],
-                    "path": [
-                      "api",
-                      "notificacoes",
-                      "health",
-                      ""
-                    ]
+                  {
+                    "key": "canal",
+                    "value": "",
+                    "description": "Filtra por canal: INTERNO ou EMAIL.",
+                    "disabled": true
                   },
-                  "description": "Verifica se o serviço de notificações está operacional. Não requer autenticação."
-                },
-                "response": []
-              },
-            {
-              "name": "Listar Notificações",
-              "request": {
-                "auth": {
-                  "type": "noauth"
-                },
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/notificacoes/",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "notificacoes",
-                    ""
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Detalhe Notificação",
-              "request": {
-                "auth": {
-                  "type": "noauth"
-                },
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{base_url}}/api/notificacoes/:notificacao_id/",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "notificacoes",
-                    ":notificacao_id",
-                    ""
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "Marcar Como Lida",
-              "request": {
-                "auth": {
-                  "type": "noauth"
-                },
-                "method": "PATCH",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
+                  {
+                    "key": "tipoDestinatario",
+                    "value": "",
+                    "description": "Filtra por tipo de destinatário: USUARIO, CLIENTE ou SISTEMA.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "destinatarioId",
+                    "value": "",
+                    "description": "UUID do destinatário (userId ou clienteId).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "evento",
+                    "value": "",
+                    "description": "Routing key do evento RabbitMQ (ex: auth.login.success).",
+                    "disabled": true
                   }
-                },
-                "url": {
-                  "raw": "{{base_url}}/api/notificacoes/:notificacao_id/ler/",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "notificacoes",
-                    ":notificacao_id",
-                    "ler",
-                    ""
-                  ]
-                }
+                ]
               },
-              "response": []
+              "description": "Lista notificações do utilizador autenticado (destinatário direto) e notificações de sistema (tipoDestinatario=SISTEMA). Suporta filtros opcionais por query string. Requer Bearer token JWT."
             },
-            {
-              "name": "Marcar Todas Como Lidas",
-              "request": {
-                "auth": {
-                  "type": "noauth"
-                },
-                "method": "PATCH",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
+            "response": []
+          },
+          {
+            "name": "Detalhe Notificação",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/:notificacao_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ":notificacao_id", ""],
+                "variable": [
+                  {
+                    "key": "notificacao_id",
+                    "value": "",
+                    "description": "UUID da notificação."
                   }
-                },
-                "url": {
-                  "raw": "{{base_url}}/api/notificacoes/ler-todas/",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "api",
-                    "notificacoes",
-                    "ler-todas",
-                    ""
-                  ]
-                }
+                ]
               },
-              "response": []
-            }
-          ]
-        }
+              "description": "Retorna o detalhe de uma notificação acessível ao utilizador autenticado. Retorna 404 se não existir ou não pertencer ao utilizador. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Marcar Como Lida",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/:notificacao_id/ler/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", ":notificacao_id", "ler", ""],
+                "variable": [
+                  {
+                    "key": "notificacao_id",
+                    "value": "",
+                    "description": "UUID da notificação."
+                  }
+                ]
+              },
+              "description": "Marca uma notificação como lida. Não requer body. Retorna 409 se já estiver marcada como lida. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Marcar Todas Como Lidas",
+            "request": {
+              "method": "PATCH",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/notificacoes/ler-todas/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "notificacoes", "ler-todas", ""]
+              },
+              "description": "Marca como lidas todas as notificações acessíveis ao utilizador autenticado (destinatário direto e SISTEMA). Não requer body. Retorna a lista completa de notificações atualizada. Requer Bearer token JWT."
+            },
+            "response": []
+          }
+        ]
+      }
   ]
 }
