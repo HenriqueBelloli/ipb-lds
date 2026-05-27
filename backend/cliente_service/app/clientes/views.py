@@ -1,7 +1,8 @@
-from rest_framework import generics, status
+from rest_framework import generics, serializers, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django.shortcuts import get_object_or_404
 from shared.auth_middleware.permissions import IsOperador
 from .models import Cliente, ClienteDelegacao
@@ -12,15 +13,32 @@ from .publishers import publish_cliente_criado
 from .services.financeiro_client import FinanceiroServiceClient
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary='Listar clientes',
+        tags=['clientes'],
+        parameters=[
+            OpenApiParameter('nome', OpenApiTypes.STR, description='Filtrar por nome (parcial)'),
+            OpenApiParameter('nif', OpenApiTypes.STR, description='Filtrar por NIF (parcial)'),
+            OpenApiParameter('delegacaoId', OpenApiTypes.UUID, description='Filtrar por delegação'),
+            OpenApiParameter('flagAssociado', OpenApiTypes.BOOL, description='Filtrar por associado'),
+            OpenApiParameter('ativo', OpenApiTypes.BOOL, description='Filtrar por estado activo'),
+        ],
+        responses={200: ClienteSerializer},
+    ),
+    create=extend_schema(
+        summary='Criar cliente',
+        tags=['clientes'],
+        request=ClienteSerializer,
+        responses={201: ClienteSerializer},
+    ),
+)
 class ClienteListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsOperador]
 
     def get_serializer_class(self):
         return ClienteSerializer
 
-    @extend_schema(
-            responses={200:ClienteSerializer}
-    )
     def get_queryset(self):
         queryset = Cliente.objects.all()
         nome = self.request.query_params.get('nome')
@@ -47,10 +65,6 @@ class ClienteListCreateView(generics.ListCreateAPIView):
 
         return queryset
 
-    @extend_schema(
-            request=ClienteSerializer,
-            responses={201: ClienteSerializer}
-    )
     def perform_create(self, serializer):
         cliente = serializer.save()
         publish_cliente_criado(
@@ -60,6 +74,19 @@ class ClienteListCreateView(generics.ListCreateAPIView):
         )
 
 
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Detalhe do cliente',
+        tags=['clientes'],
+        responses={200: ClienteDetailSerializer},
+    ),
+    update=extend_schema(
+        summary='Actualizar cliente',
+        tags=['clientes'],
+        request=ClienteSerializer,
+        responses={200: ClienteSerializer},
+    ),
+)
 class ClienteDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsOperador]
     queryset = Cliente.objects.all()
@@ -69,9 +96,6 @@ class ClienteDetailView(generics.RetrieveUpdateAPIView):
             return ClienteDetailSerializer
         return ClienteSerializer
 
-    @extend_schema(
-            responses={ClienteDetailSerializer}
-    )
     def retrieve(self, request, *args, **kwargs):
         cliente = self.get_object()
         token = request.headers.get(
@@ -91,7 +115,9 @@ class ClienteDelegacaoView(APIView):
     permission_classes = [IsOperador]
 
     @extend_schema(
-            responses={200: ClienteDelegacaoSerializer}
+        summary='Listar delegações do cliente',
+        tags=['clientes'],
+        responses={200: ClienteDelegacaoSerializer(many=True)},
     )
     def get(self, request, pk):
         get_object_or_404(Cliente, pk=pk)
@@ -100,8 +126,13 @@ class ClienteDelegacaoView(APIView):
         return Response(serializer.data)
 
     @extend_schema(
-            responses= {201: ClienteDelegacaoSerializer,
-                        200: ClienteDelegacaoSerializer}
+        summary='Associar cliente a delegação',
+        tags=['clientes'],
+        request=inline_serializer(
+            name='AssociarDelegacaoRequest',
+            fields={'delegacaoId': serializers.UUIDField()},
+        ),
+        responses={201: ClienteDelegacaoSerializer, 200: ClienteDelegacaoSerializer},
     )
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
