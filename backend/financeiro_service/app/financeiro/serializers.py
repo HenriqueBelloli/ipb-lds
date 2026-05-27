@@ -104,7 +104,6 @@ class MensalidadePutErrorSerializer(serializers.Serializer):
 
 class MensalidadeViewEntrySerializer(serializers.Serializer):
     valor = serializers.FloatField()
-    usuarioId = serializers.UUIDField()
 
 class GerarMensalidadesSerializer(serializers.Serializer):
     geradas = serializers.IntegerField()
