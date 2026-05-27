@@ -325,6 +325,312 @@
         ]
       },
       {
+        "name": "Cliente Service",
+        "description": "Endpoints do serviço de clientes e associados (cliente-service — porta 8003). Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil mínimo OPERADOR.",
+        "item": [
+          {
+            "name": "Health - Cliente Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service cliente-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"cliente-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/clientes/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", "health", ""]
+              },
+              "description": "Verifica se o serviço de clientes está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Clientes",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/clientes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ""],
+                "query": [
+                  {
+                    "key": "nome",
+                    "value": "",
+                    "description": "Filtrar por nome (parcial, case-insensitive).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "nif",
+                    "value": "",
+                    "description": "Filtrar por NIF (parcial).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "delegacaoId",
+                    "value": "",
+                    "description": "UUID da delegação — filtra clientes associados a essa delegação.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "flagAssociado",
+                    "value": "",
+                    "description": "Filtrar por associado: true ou false.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "ativo",
+                    "value": "",
+                    "description": "Filtrar por estado activo: true ou false.",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista clientes com paginação. Suporta filtros opcionais por query string. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Criar Cliente",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"nif\": \"123456789\",\n  \"nome\": \"Cliente Teste\",\n  \"telefone\": \"910000000\",\n  \"email\": \"teste@demo.pt\",\n  \"morada\": \"Rua Teste, 1\",\n  \"flagAssociado\": true\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/clientes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ""]
+              },
+              "description": "Cria um novo cliente. NIF deve ser único. Publica evento cliente.criado no RabbitMQ. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe Cliente",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/clientes/:cliente_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ":cliente_id", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Retorna detalhe do cliente incluindo campos calculados inadimplente e tipoPreco (consulta o financeiro-service). Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Actualizar Cliente",
+            "request": {
+              "method": "PUT",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"nif\": \"123456789\",\n  \"nome\": \"Cliente Teste Actualizado\",\n  \"flagAssociado\": false,\n  \"ativo\": true\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/clientes/:cliente_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ":cliente_id", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Actualiza os dados de um cliente. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Delegações do Cliente",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/clientes/:cliente_id/delegacoes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ":cliente_id", "delegacoes", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Lista todas as delegações às quais o cliente está associado. Requer Bearer token JWT."
+            },
+            "response": []
+          },
+          {
+            "name": "Associar Delegação ao Cliente",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"delegacaoId\": \"{{delegacao_id}}\"\n}",
+                "options": { "raw": { "language": "json" } }
+              },
+              "url": {
+                "raw": "{{base_url}}/api/clientes/:cliente_id/delegacoes/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "clientes", ":cliente_id", "delegacoes", ""],
+                "variable": [
+                  {
+                    "key": "cliente_id",
+                    "value": "",
+                    "description": "UUID do cliente."
+                  }
+                ]
+              },
+              "description": "Associa o cliente a uma delegação. Retorna 201 se criado, 200 se já existia (idempotente). Requer Bearer token JWT."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Auditoria Service",
+        "description": "Endpoints do serviço de auditoria (auditoria-service — porta 8008). Log centralizado e imutável de todos os eventos do sistema. Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil ADMINISTRADOR.",
+        "item": [
+          {
+            "name": "Health - Auditoria Service",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
+                    "pm.test(\"Body contains service auditoria-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"auditoria-service\"); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "auth": { "type": "noauth" },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/health/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", "health", ""]
+              },
+              "description": "Verifica se o serviço de auditoria está operacional. Não requer autenticação."
+            },
+            "response": []
+          },
+          {
+            "name": "Listar Logs de Auditoria",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", ""],
+                "query": [
+                  {
+                    "key": "evento",
+                    "value": "",
+                    "description": "Routing key do evento (ex: os.cancelada, auth.login.failed).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "servico",
+                    "value": "",
+                    "description": "Nome do microserviço que publicou o evento (ex: os-service, auth-service).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "usuarioId",
+                    "value": "",
+                    "description": "UUID do utilizador associado ao evento. Null em eventos automáticos do sistema.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "delegacaoId",
+                    "value": "",
+                    "description": "UUID da delegação associada ao evento.",
+                    "disabled": true
+                  },
+                  {
+                    "key": "dataInicio",
+                    "value": "",
+                    "description": "Data de início do período (formato YYYY-MM-DD, inclusive).",
+                    "disabled": true
+                  },
+                  {
+                    "key": "dataFim",
+                    "value": "",
+                    "description": "Data de fim do período (formato YYYY-MM-DD, inclusive).",
+                    "disabled": true
+                  }
+                ]
+              },
+              "description": "Lista logs de auditoria com paginação (50 por página). Suporta filtros por evento, serviço, utilizador, delegação e período. Requer perfil ADMINISTRADOR."
+            },
+            "response": []
+          },
+          {
+            "name": "Detalhe de Log",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/auditoria/:log_id/",
+                "host": ["{{base_url}}"],
+                "path": ["api", "auditoria", ":log_id", ""],
+                "variable": [
+                  {
+                    "key": "log_id",
+                    "value": "",
+                    "description": "UUID do registo de auditoria."
+                  }
+                ]
+              },
+              "description": "Retorna o detalhe completo de um registo de auditoria, incluindo o payload original do evento sem modificações. Requer perfil ADMINISTRADOR."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
         "name": "Notification Service",
         "description": "Endpoints do serviço de notificações (notification-service — porta 8009). Todos os endpoints, exceto Health, requerem Bearer token JWT.",
         "item": [
@@ -455,113 +761,6 @@
                 "path": ["api", "notificacoes", "ler-todas", ""]
               },
               "description": "Marca como lidas todas as notificações acessíveis ao utilizador autenticado (destinatário direto e SISTEMA). Não requer body. Retorna a lista completa de notificações atualizada. Requer Bearer token JWT."
-            },
-            "response": []
-          }
-        ]
-      },
-      {
-        "name": "Auditoria Service",
-        "description": "Endpoints do serviço de auditoria (auditoria-service — porta 8008). Log centralizado e imutável de todos os eventos do sistema. Todos os endpoints, exceto Health, requerem Bearer token JWT com perfil ADMINISTRADOR.",
-        "item": [
-          {
-            "name": "Health - Auditoria Service",
-            "event": [
-              {
-                "listen": "test",
-                "script": {
-                  "exec": [
-                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
-                    "pm.test(\"Body contains status ok\", function () { var json = pm.response.json(); pm.expect(json.status).to.eql(\"ok\"); });",
-                    "pm.test(\"Body contains service auditoria-service\", function () { var json = pm.response.json(); pm.expect(json.service).to.eql(\"auditoria-service\"); });"
-                  ],
-                  "type": "text/javascript"
-                }
-              }
-            ],
-            "request": {
-              "auth": { "type": "noauth" },
-              "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{base_url}}/api/auditoria/health/",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auditoria", "health", ""]
-              },
-              "description": "Verifica se o serviço de auditoria está operacional. Não requer autenticação."
-            },
-            "response": []
-          },
-          {
-            "name": "Listar Logs de Auditoria",
-            "request": {
-              "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{base_url}}/api/auditoria/",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auditoria", ""],
-                "query": [
-                  {
-                    "key": "evento",
-                    "value": "",
-                    "description": "Routing key do evento (ex: os.cancelada, auth.login.failed).",
-                    "disabled": true
-                  },
-                  {
-                    "key": "servico",
-                    "value": "",
-                    "description": "Nome do microserviço que publicou o evento (ex: os-service, auth-service).",
-                    "disabled": true
-                  },
-                  {
-                    "key": "usuarioId",
-                    "value": "",
-                    "description": "UUID do utilizador associado ao evento. Null em eventos automáticos do sistema.",
-                    "disabled": true
-                  },
-                  {
-                    "key": "delegacaoId",
-                    "value": "",
-                    "description": "UUID da delegação associada ao evento.",
-                    "disabled": true
-                  },
-                  {
-                    "key": "dataInicio",
-                    "value": "",
-                    "description": "Data de início do período (formato YYYY-MM-DD, inclusive).",
-                    "disabled": true
-                  },
-                  {
-                    "key": "dataFim",
-                    "value": "",
-                    "description": "Data de fim do período (formato YYYY-MM-DD, inclusive).",
-                    "disabled": true
-                  }
-                ]
-              },
-              "description": "Lista logs de auditoria com paginação (50 por página). Suporta filtros por evento, serviço, utilizador, delegação e período. Requer perfil ADMINISTRADOR."
-            },
-            "response": []
-          },
-          {
-            "name": "Detalhe de Log",
-            "request": {
-              "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{base_url}}/api/auditoria/:log_id/",
-                "host": ["{{base_url}}"],
-                "path": ["api", "auditoria", ":log_id", ""],
-                "variable": [
-                  {
-                    "key": "log_id",
-                    "value": "",
-                    "description": "UUID do registo de auditoria."
-                  }
-                ]
-              },
-              "description": "Retorna o detalhe completo de um registo de auditoria, incluindo o payload original do evento sem modificações. Requer perfil ADMINISTRADOR."
             },
             "response": []
           }
