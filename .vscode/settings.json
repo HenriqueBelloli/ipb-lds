@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend/auth_service/app",
+    "${workspaceFolder}/backend/usuario_service/app",
+    "${workspaceFolder}/backend/notification_service/app",
+    "${workspaceFolder}/backend"
+  ]
+}

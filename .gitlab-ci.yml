@@ -1,0 +1,164 @@
+stages:
+  - build
+  - push
+  - deploy-develop
+  - deploy-staging
+  - deploy-production
+
+# ── Matriz de serviços (fonte única de verdade) ───────────────────────────────
+# Âncora YAML reutilizada em build, push e deploy — sem duplicação.
+# SERVICE   = nome da pasta em backend/ (underscore)
+# IMAGE_NAME = nome da imagem no registry e no docker-compose (hyphen)
+.matrix-list: &matrix-list
+  - SERVICE: auth_service
+    IMAGE_NAME: auth-service
+  - SERVICE: usuario_service
+    IMAGE_NAME: usuario-service
+  - SERVICE: cliente_service
+    IMAGE_NAME: cliente-service
+  - SERVICE: servico_service
+    IMAGE_NAME: servico-service
+  - SERVICE: os_service
+    IMAGE_NAME: os-service
+  - SERVICE: financeiro_service
+    IMAGE_NAME: financeiro-service
+  - SERVICE: notification_service
+    IMAGE_NAME: notification-service
+  - SERVICE: auditoria_service
+    IMAGE_NAME: auditoria-service
+
+# ── Regras de triggers ────────────────────────────────────────────────────────
+.on-deploy-branches:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+# ── Build ─────────────────────────────────────────────────────────────────────
+
+.build-template:
+  stage: build
+  image: docker:26
+  tags:
+    - docker
+  services:
+    - docker:26-dind
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:$CI_COMMIT_SHA" -f "./backend/$SERVICE/Dockerfile" ./backend
+    - mkdir -p image-artifacts
+    - docker save "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:$CI_COMMIT_SHA" | gzip > "image-artifacts/$IMAGE_NAME.tar.gz"
+  artifacts:
+    paths:
+      - image-artifacts/
+    expire_in: 1 hour
+
+build:
+  extends: [.build-template, .on-deploy-branches]
+  parallel:
+    matrix: *matrix-list
+
+# ── Push ──────────────────────────────────────────────────────────────────────
+
+.push-template:
+  stage: push
+  image: docker:26
+  tags:
+    - docker
+  services:
+    - docker:26-dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker load < "image-artifacts/$IMAGE_NAME.tar.gz"
+    - docker tag "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:latest"
+    - docker push "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE/backend/$IMAGE_NAME:latest"
+
+push:
+  extends: [.push-template, .on-deploy-branches]
+  parallel:
+    matrix: *matrix-list
+  needs:
+    - job: build
+      parallel:
+        matrix: *matrix-list
+
+# ── Deploy ────────────────────────────────────────────────────────────────────
+# Variáveis necessárias em Settings → CI/CD → Variables:
+#   SSH_PRIVATE_KEY — chave privada SSH (tipo File, Protected)
+#   SSH_HOST        — IP da VM (ex: 192.168.90.100)
+#   SSH_USER        — utilizador SSH (ex: a69607)
+#   DEVELOP_ENV     — tipo File, conteúdo do .env de develop
+#   STAGING_ENV     — tipo File, conteúdo do .env de staging
+#   PRODUCTION_ENV  — tipo File, conteúdo do .env de produção
+
+.deploy-template:
+  image: alpine:latest
+  tags:
+    - docker
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - tr -d '\r' < "$SSH_PRIVATE_KEY" > /tmp/deploy_key
+    - printf '\n' >> /tmp/deploy_key
+    - chmod 600 /tmp/deploy_key
+    - ssh-add /tmp/deploy_key
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+  script:
+    - ssh "$SSH_USER@$SSH_HOST" "mkdir -p $DEPLOY_PATH"
+    - printf '%s\n' "$ENV_FILE" > /tmp/deploy.env
+    - scp /tmp/deploy.env "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/.env"
+    - scp docker-compose.yml "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/docker-compose.yml"
+    - scp -r reverse-proxy/ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/reverse-proxy"
+    - |
+      echo "$CI_REGISTRY_PASSWORD" | ssh "$SSH_USER@$SSH_HOST" "
+        set -e
+        cd $DEPLOY_PATH
+        docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        export IMAGE_TAG=$CI_COMMIT_SHA
+        docker compose pull
+        docker compose down --remove-orphans
+        docker compose up -d"
+  needs:
+    - job: push
+      parallel:
+        matrix: *matrix-list
+
+deploy-develop:
+  extends: .deploy-template
+  stage: deploy-develop
+  environment:
+    name: develop
+    url: http://$SSH_HOST
+  variables:
+    DEPLOY_PATH: /opt/erp/develop
+    ENV_FILE: $DEVELOP_ENV
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+deploy-staging:
+  extends: .deploy-template
+  stage: deploy-staging
+  environment:
+    name: staging
+    url: http://$SSH_HOST
+  variables:
+    DEPLOY_PATH: /opt/erp/staging
+    ENV_FILE: $STAGING_ENV
+  rules:
+    - if: $CI_COMMIT_BRANCH == "staging"
+
+deploy-production:
+  extends: .deploy-template
+  stage: deploy-production
+  environment:
+    name: production
+    url: http://$SSH_HOST
+  variables:
+    DEPLOY_PATH: /opt/erp/production
+    ENV_FILE: $PRODUCTION_ENV
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
