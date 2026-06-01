@@ -2,7 +2,7 @@ import { EyeIcon } from "../shared/icons";
 
 type OrderStatus = "A EXECUTAR" | "EM EXECUÇÃO" | "CONCLUÍDA" | "CANCELADA";
 
-type ServiceOrder = {
+export type ServiceOrder = {
   number: string;
   client: string;
   service: string;
@@ -12,7 +12,7 @@ type ServiceOrder = {
   amount: string;
 };
 
-const serviceOrders: ServiceOrder[] = [
+export const serviceOrders: ServiceOrder[] = [
   {
     number: "OS-2024-001",
     client: "Manuel Costa",
@@ -94,7 +94,11 @@ const statusClass: Record<OrderStatus, string> = {
   CANCELADA: "status-canceled",
 };
 
-export function ServiceOrdersPage() {
+type ServiceOrdersPageProps = {
+  onViewOrder: (order: ServiceOrder) => void;
+};
+
+export function ServiceOrdersPage({ onViewOrder }: ServiceOrdersPageProps) {
   return (
     <section className="orders-page" data-node-id="13:327">
       <div className="orders-title-row">
@@ -155,7 +159,11 @@ export function ServiceOrdersPage() {
             </thead>
             <tbody>
               {serviceOrders.map((order) => (
-                <tr className={statusClass[order.status]} key={order.number}>
+                <tr
+                  className={statusClass[order.status]}
+                  key={order.number}
+                  onDoubleClick={() => onViewOrder(order)}
+                >
                   <td>{order.number}</td>
                   <td>{order.client}</td>
                   <td>{order.service}</td>
@@ -166,7 +174,7 @@ export function ServiceOrdersPage() {
                   <td>{order.date}</td>
                   <td className="amount-cell">{order.amount}</td>
                   <td className="actions-cell">
-                    <button type="button" aria-label={`Ver ${order.number}`}>
+                    <button type="button" aria-label={`Ver ${order.number}`} onClick={() => onViewOrder(order)}>
                       <EyeIcon aria-hidden="true" />
                     </button>
                     <button type="button" aria-label={`Mais opções para ${order.number}`}>

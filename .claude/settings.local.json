@@ -9,7 +9,15 @@
       "Bash(docker-compose up *)",
       "Bash(dos2unix /c/Desenvolvimento/LDS/sdl-project-group-01/backend/auth_service/entrypoint.sh)",
       "Bash(docker-compose ps *)",
-      "Bash(curl -s http://localhost:8001/api/docs/)"
+      "Bash(curl -s http://localhost:8001/api/docs/)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Desenvolvimento\\\\LDS\\\\sdl-project-group-01\\\\backend\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Format-List)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Desenvolvimento\\\\LDS\\\\sdl-project-group-01\\\\backend\\\\financeiro_service\\\\\" -Recurse -Force | Select-Object FullName | Sort-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Desenvolvimento\\\\LDS\\\\sdl-project-group-01\\\\backend\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(git commit *)",
+      "Bash(python -c ' *)"
     ]
   }
 }

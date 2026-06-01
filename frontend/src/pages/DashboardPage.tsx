@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { AppUser } from "../App";
-import { ServiceOrdersPage } from "./ServiceOrdersPage";
+import { Client, ClientsPage } from "./ClientsPage";
+import { ClientDetailPage } from "./ClientDetailPage";
+import { FinanceReceivablesPage } from "./FinanceReceivablesPage";
+import { ServiceOrder, ServiceOrdersPage } from "./ServiceOrdersPage";
+import { ServiceOrderDetailPage } from "./ServiceOrderDetailPage";
 import {
   BellIcon,
   ClipboardIcon,
@@ -33,7 +37,7 @@ const menuItems = [
 const sectionTitles: Record<AppSection, string> = {
   dashboard: "Dashboard — Visão Geral",
   orders: "Ordens de Serviço",
-  finance: "Financeiro",
+  finance: "Contas a Receber",
   clients: "Clientes",
   audit: "Auditoria",
 };
@@ -64,7 +68,7 @@ const emptySectionCopy: Record<AppSection, string> = {
 
 const contentFor = {
   dashboard: null,
-  orders: <ServiceOrdersPage />,
+  orders: null,
   finance: null,
   clients: null,
   audit: null,
@@ -91,8 +95,56 @@ function getContent(section: AppSection) {
 
 export function DashboardPage({ user, onLogout }: DashboardPageProps) {
   const [activeSection, setActiveSection] = useState<AppSection>("dashboard");
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const pageTitle = sectionTitles[activeSection];
+  const pageTitle = selectedOrder
+    ? "Detalhe da Ordem de Serviço"
+    : selectedClient
+      ? "Detalhe do Cliente"
+      : sectionTitles[activeSection];
+
+  function handleSectionChange(section: AppSection) {
+    setActiveSection(section);
+    setSelectedOrder(null);
+    setSelectedClient(null);
+  }
+
+  function handleViewOrder(order: ServiceOrder) {
+    setActiveSection("orders");
+    setSelectedOrder(order);
+    setSelectedClient(null);
+  }
+
+  function handleViewClient(client: Client) {
+    setActiveSection("clients");
+    setSelectedClient(client);
+    setSelectedOrder(null);
+  }
+
+  function renderContent() {
+    if (selectedClient) {
+      return <ClientDetailPage client={selectedClient} onBack={() => setSelectedClient(null)} />;
+    }
+
+    if (selectedOrder) {
+      return <ServiceOrderDetailPage order={selectedOrder} onBack={() => setSelectedOrder(null)} />;
+    }
+
+    if (activeSection === "orders") {
+      return <ServiceOrdersPage onViewOrder={handleViewOrder} />;
+    }
+
+    if (activeSection === "finance") {
+      return <FinanceReceivablesPage />;
+    }
+
+    if (activeSection === "clients") {
+      return <ClientsPage onViewClient={handleViewClient} />;
+    }
+
+    return getContent(activeSection);
+  }
 
   return (
     <main className="app-shell">
@@ -111,7 +163,7 @@ export function DashboardPage({ user, onLogout }: DashboardPageProps) {
                 className={`sidebar-link${activeSection === item.id ? " sidebar-link-active" : ""}`}
                 key={item.id}
                 type="button"
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => handleSectionChange(item.id)}
               >
                 <Icon aria-hidden="true" />
                 <span>{item.label}</span>
@@ -151,7 +203,7 @@ export function DashboardPage({ user, onLogout }: DashboardPageProps) {
           </div>
         </header>
 
-        {getContent(activeSection)}
+        {renderContent()}
       </section>
     </main>
   );
