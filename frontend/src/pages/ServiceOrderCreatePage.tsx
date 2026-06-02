@@ -33,7 +33,10 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
   const [selectedServices, setSelectedServices] = useState<Record<string, SelectedService>>({});
   const [expectedDate, setExpectedDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const [isSearchingClients, setIsSearchingClients] = useState(false);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,26 +47,42 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
     (total, service) => total + (selectedServices[service.id]?.bonified ? 0 : service.appliedPrice),
     0,
   );
+  const entryAmount = selectedServiceRows.reduce((total, service) => total + getServiceEntryAmount(service, selectedServices[service.id]?.bonified), 0);
+  const remainingAmount = Math.max(totalAmount - entryAmount, 0);
   const entryPercent = selectedServiceRows.reduce((highest, service) => Math.max(highest, service.entryPercent), 0);
+  const entrySummary = selectedServiceRows.length
+    ? selectedServiceRows.map((service) => `${formatPercent(service.entryPercent)} (${service.name})`).join(" - ")
+    : "-";
 
-  const clientOptions = useMemo(
+  const normalizedClientQuery = normalizeSearch(clientQuery);
+  const visibleClients = useMemo(
     () =>
-      clients.map((client) => ({
-        label: getClientOptionLabel(client),
-        value: client.id,
-      })),
-    [clients],
+      clients
+        .filter((client) => {
+          if (!normalizedClientQuery) {
+            return true;
+          }
+
+          return normalizeSearch(`${client.name} ${client.nif}`).includes(normalizedClientQuery);
+        })
+        .slice(0, 8),
+    [clients, normalizedClientQuery],
   );
 
-  const serviceOptions = useMemo(
+  const normalizedServiceQuery = normalizeSearch(serviceQuery);
+  const visibleServices = useMemo(
     () =>
       delegationServices
         .filter((service) => !selectedServices[service.id])
-        .map((service) => ({
-          label: getServiceOptionLabel(service),
-          value: service.id,
-        })),
-    [delegationServices, selectedServices],
+        .filter((service) => {
+          if (!normalizedServiceQuery) {
+            return true;
+          }
+
+          return normalizeSearch(`${service.name} ${service.description ?? ""}`).includes(normalizedServiceQuery);
+        })
+        .slice(0, 8),
+    [delegationServices, normalizedServiceQuery, selectedServices],
   );
 
   useEffect(() => {
@@ -111,6 +130,39 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
 
   useEffect(() => {
     let isMounted = true;
+    const trimmedQuery = clientQuery.trim();
+
+    if (selectedClient && trimmedQuery === getClientOptionLabel(selectedClient)) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsSearchingClients(true);
+        const nextClients = await listClients({ query: trimmedQuery, status: "active" });
+
+        if (isMounted) {
+          setClients(nextClients);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError instanceof Error ? loadError.message : "Nao foi possivel pesquisar clientes.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsSearchingClients(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [clientQuery, selectedClient]);
+
+  useEffect(() => {
+    let isMounted = true;
 
     async function loadServices() {
       if (!selectedDelegationId) {
@@ -151,17 +203,24 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
 
   function handleClientInputChange(value: string) {
     setClientQuery(value);
-    const exactOption = clientOptions.find((option) => option.label === value);
-    setSelectedClientId(exactOption?.value ?? "");
+    setSelectedClientId("");
+    setIsClientDropdownOpen(true);
   }
 
   function handleServiceInputChange(value: string) {
     setServiceQuery(value);
-    const exactOption = serviceOptions.find((option) => option.label === value);
+    setIsServiceDropdownOpen(true);
+  }
 
-    if (exactOption) {
-      addService(exactOption.value);
-    }
+  function selectClient(client: Client) {
+    setSelectedClientId(client.id);
+    setClientQuery(getClientOptionLabel(client));
+    setIsClientDropdownOpen(false);
+  }
+
+  function selectService(service: DelegationService) {
+    addService(service.id);
+    setIsServiceDropdownOpen(false);
   }
 
   function addService(serviceId: string) {
@@ -223,6 +282,7 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
           serviceId: service.serviceId,
           serviceDelegationId: service.id,
           appliedPrice: service.appliedPrice,
+          entryPercent: service.entryPercent,
           bonified: selectedServices[service.id]?.bonified ?? false,
         })),
       });
@@ -276,18 +336,47 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
               <div className="os-search-input">
                 <SearchIcon aria-hidden="true" />
                 <input
-                  list="service-order-client-options"
                   value={clientQuery}
                   onChange={(event) => handleClientInputChange(event.target.value)}
+                  onFocus={() => setIsClientDropdownOpen(true)}
+                  onBlur={() => window.setTimeout(() => setIsClientDropdownOpen(false), 120)}
                   placeholder="Pesquisar por nome ou NIF..."
                   disabled={isLoadingInitialData}
                 />
-                <datalist id="service-order-client-options">
-                  {clientOptions.map((client) => (
-                    <option key={client.value} value={client.label} />
-                  ))}
-                </datalist>
+                {isClientDropdownOpen && !isLoadingInitialData ? (
+                  <div className="os-combobox-menu">
+                    {isSearchingClients ? <div className="os-combobox-empty">A pesquisar clientes...</div> : null}
+                    {!isSearchingClients && visibleClients.length ? (
+                      visibleClients.map((client) => (
+                        <button key={client.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => selectClient(client)}>
+                          <strong>{client.name}</strong>
+                          <span>NIF {client.nif}</span>
+                          <small>{client.associated ? "Associado" : "Nao associado"}</small>
+                        </button>
+                      ))
+                    ) : null}
+                    {!isSearchingClients && !visibleClients.length ? <div className="os-combobox-empty">Nenhum cliente encontrado</div> : null}
+                  </div>
+                ) : null}
               </div>
+              {selectedClient ? (
+                <div className="os-client-summary">
+                  <div>
+                    <span>Associado</span>
+                    <strong className="mini-pill mini-pill-success">{selectedClient.associated ? "Sim" : "Nao"}</strong>
+                  </div>
+                  <div>
+                    <span>Delegacao</span>
+                    <strong>{selectedClient.delegation}</strong>
+                  </div>
+                  <div>
+                    <span>Estado</span>
+                    <strong className={`mini-pill ${selectedClient.delinquent ? "mini-pill-warning" : "mini-pill-success"}`}>
+                      {selectedClient.delinquent ? "Pendente" : "Regular"}
+                    </strong>
+                  </div>
+                </div>
+              ) : null}
             </label>
           </div>
         </FormSection>
@@ -297,38 +386,47 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
             <div className={`os-search-input${!selectedDelegationId ? " os-search-input-disabled" : ""}`}>
               <SearchIcon aria-hidden="true" />
               <input
-                list="service-order-service-options"
                 value={serviceQuery}
                 onChange={(event) => handleServiceInputChange(event.target.value)}
+                onFocus={() => setIsServiceDropdownOpen(true)}
+                onBlur={() => window.setTimeout(() => setIsServiceDropdownOpen(false), 120)}
                 placeholder="Pesquisar servico..."
                 disabled={!selectedDelegationId || isLoadingServices}
               />
               {!selectedDelegationId ? <LockIcon aria-hidden="true" /> : null}
-              <datalist id="service-order-service-options">
-                {serviceOptions.map((service) => (
-                  <option key={service.value} value={service.label} />
-                ))}
-              </datalist>
+              {isServiceDropdownOpen && selectedDelegationId && !isLoadingServices ? (
+                <div className="os-combobox-menu">
+                  {visibleServices.length ? (
+                    visibleServices.map((service) => (
+                      <button key={service.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => selectService(service)}>
+                        <strong>{service.name}</strong>
+                        <span>{formatCurrency(service.appliedPrice)}</span>
+                        <small>Entrada {formatPercent(service.entryPercent)}</small>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="os-combobox-empty">Nenhum servico encontrado</div>
+                  )}
+                </div>
+              ) : null}
             </div>
             <small>{selectedDelegationId ? "Seleccione um servico da lista" : "Disponivel apos seleccionar a delegacao"}</small>
           </label>
 
-          <div className="os-services-available-box">
-            {selectedDelegationId ? (
-              isLoadingServices ? (
-                <span>A carregar servicos disponiveis...</span>
-              ) : delegationServices.length ? (
-                <span>{delegationServices.length} servico(s) disponivel(is) para pesquisa</span>
-              ) : (
-                <span>Nenhum servico disponivel nesta delegacao</span>
-              )
-            ) : (
+          {!selectedDelegationId ? (
+            <div className="os-services-available-box">
               <>
                 <span className="os-empty-icon">=</span>
                 <span>Seleccione uma delegacao para ver os servicos disponiveis</span>
               </>
-            )}
-          </div>
+            </div>
+          ) : null}
+
+          {selectedDelegationId && !isLoadingServices && !delegationServices.length ? (
+            <div className="os-services-available-box">
+              <span>Nenhum servico disponivel nesta delegacao</span>
+            </div>
+          ) : null}
 
           {selectedServiceRows.length ? (
             <div className="os-selected-services-box">
@@ -366,7 +464,7 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
                 );
               })}
               <div className="os-selected-services-total">
-                <span>Total</span>
+                <span>Entrada total: {formatCurrency(entryAmount)}</span>
                 <strong>{formatCurrency(totalAmount)}</strong>
               </div>
             </div>
@@ -390,10 +488,16 @@ export function ServiceOrderCreatePage({ onCancel, onCreated }: ServiceOrderCrea
             <label className="os-field">
               <span>Percentagem de Entrada</span>
               <div className="os-locked-input">
-                <input value={selectedServiceRows.length ? formatPercent(entryPercent) : "-"} readOnly />
+                <input value={entrySummary} readOnly />
                 <LockIcon aria-hidden="true" />
               </div>
               <small>Definida na configuracao do servico</small>
+              {selectedServiceRows.length ? (
+                <div className="os-entry-money-summary">
+                  <strong>Entrada total: {formatCurrency(entryAmount)}</strong>
+                  <span>Saldo final: {formatCurrency(remainingAmount)}</span>
+                </div>
+              ) : null}
             </label>
           </div>
 
@@ -442,6 +546,22 @@ function getClientOptionLabel(client: Client) {
 
 function getServiceOptionLabel(service: DelegationService) {
   return `${service.name} - ${formatCurrency(service.appliedPrice)}`;
+}
+
+function getServiceEntryAmount(service: DelegationService, bonified = false) {
+  if (bonified) {
+    return 0;
+  }
+
+  return service.appliedPrice * (service.entryPercent / 100);
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function formatCurrency(value: number) {
