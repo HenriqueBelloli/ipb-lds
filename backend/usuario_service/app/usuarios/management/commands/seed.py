@@ -5,15 +5,13 @@ Cria delegações e utilizadores iniciais de teste se ainda não existirem.
 UUIDs fixos — partilhados com o auth-service para manter consistência.
 
 Delegações:
-  Sede:              10000000-0000-0000-0000-000000000001
-  Delegação Norte:   10000000-0000-0000-0000-000000000002
-  Delegação Centro:  10000000-0000-0000-0000-000000000003
-  Delegação Sul:     10000000-0000-0000-0000-000000000004
-  Delegação Alentejo:10000000-0000-0000-0000-000000000005
-  Delegação Algarve: 10000000-0000-0000-0000-000000000006
-  Delegação Açores:  10000000-0000-0000-0000-000000000007
-  Delegação Madeira: 10000000-0000-0000-0000-000000000008
-  Delegação Beiras:  10000000-0000-0000-0000-000000000009
+  Bragança:              10000000-0000-0000-0000-000000000001
+  Mirandela:             10000000-0000-0000-0000-000000000002
+  Braga:                 10000000-0000-0000-0000-000000000003
+  Macedo de Cavaleiros:  10000000-0000-0000-0000-000000000004
+  Vinhais:               10000000-0000-0000-0000-000000000005
+  Mogadouro:             10000000-0000-0000-0000-000000000006
+  Miranda do Douro:      10000000-0000-0000-0000-000000000007
 
 Utilizadores:
   ADMINISTRADOR:     20000000-0000-0000-0000-000000000001
@@ -30,81 +28,65 @@ from usuarios.models import Delegacao, Usuario
 
 # ── UUIDs fixos partilhados com o auth-service ───────────────────────────────
 
-DELEGACAO_SEDE     = '10000000-0000-0000-0000-000000000001'
-DELEGACAO_NORTE    = '10000000-0000-0000-0000-000000000002'
-DELEGACAO_CENTRO   = '10000000-0000-0000-0000-000000000003'
-DELEGACAO_SUL      = '10000000-0000-0000-0000-000000000004'
-DELEGACAO_ALENTEJO = '10000000-0000-0000-0000-000000000005'
-DELEGACAO_ALGARVE  = '10000000-0000-0000-0000-000000000006'
-DELEGACAO_ACORES   = '10000000-0000-0000-0000-000000000007'
-DELEGACAO_MADEIRA  = '10000000-0000-0000-0000-000000000008'
-DELEGACAO_BEIRAS   = '10000000-0000-0000-0000-000000000009'
+DELEGACAO_BRAGANCA  = '10000000-0000-0000-0000-000000000001'
+DELEGACAO_MIRANDELA = '10000000-0000-0000-0000-000000000002'
+DELEGACAO_BRAGA     = '10000000-0000-0000-0000-000000000003'
+DELEGACAO_MACEDO    = '10000000-0000-0000-0000-000000000004'
+DELEGACAO_VINHAIS   = '10000000-0000-0000-0000-000000000005'
+DELEGACAO_MOGADOURO = '10000000-0000-0000-0000-000000000006'
+DELEGACAO_MIRANDA   = '10000000-0000-0000-0000-000000000007'
 
-USUARIO_ADMIN      = '20000000-0000-0000-0000-000000000001'
-USUARIO_OPERADOR   = '20000000-0000-0000-0000-000000000003'
+USUARIO_ADMIN    = '20000000-0000-0000-0000-000000000001'
+USUARIO_OPERADOR = '20000000-0000-0000-0000-000000000003'
 
 DELEGACOES_DATA = [
     {
-        'id':           DELEGACAO_SEDE,
-        'codigo':       'SEDE',
-        'nome':         'Sede Central',
-        'localizacao':  'Lisboa',
+        'id':            DELEGACAO_BRAGANCA,
+        'codigo':        'BRAGANCA',
+        'nome':          'Delegação Bragança',
+        'localizacao':   'Bragança',
         'responsavelId': USUARIO_ADMIN,
     },
     {
-        'id':           DELEGACAO_NORTE,
-        'codigo':       'NORTE',
-        'nome':         'Delegação Norte',
-        'localizacao':  'Porto',
+        'id':            DELEGACAO_MIRANDELA,
+        'codigo':        'MIRANDELA',
+        'nome':          'Delegação Mirandela',
+        'localizacao':   'Mirandela',
         'responsavelId': USUARIO_OPERADOR,
     },
     {
-        'id':           DELEGACAO_CENTRO,
-        'codigo':       'CENTRO',
-        'nome':         'Delegação Centro',
-        'localizacao':  'Coimbra',
+        'id':            DELEGACAO_BRAGA,
+        'codigo':        'BRAGA',
+        'nome':          'Delegação Braga',
+        'localizacao':   'Braga',
         'responsavelId': None,
     },
     {
-        'id':           DELEGACAO_SUL,
-        'codigo':       'SUL',
-        'nome':         'Delegação Sul',
-        'localizacao':  'Faro',
+        'id':            DELEGACAO_MACEDO,
+        'codigo':        'MACEDO',
+        'nome':          'Delegação Macedo de Cavaleiros',
+        'localizacao':   'Macedo de Cavaleiros',
         'responsavelId': None,
     },
     {
-        'id':           DELEGACAO_ALENTEJO,
-        'codigo':       'ALENTEJO',
-        'nome':         'Delegação Alentejo',
-        'localizacao':  'Évora',
+        'id':            DELEGACAO_VINHAIS,
+        'codigo':        'VINHAIS',
+        'nome':          'Delegação Vinhais',
+        'localizacao':   'Vinhais',
         'responsavelId': None,
     },
     {
-        'id':           DELEGACAO_ALGARVE,
-        'codigo':       'ALGARVE',
-        'nome':         'Delegação Algarve',
-        'localizacao':  'Lagos',
+        'id':            DELEGACAO_MOGADOURO,
+        'codigo':        'MOGADOURO',
+        'nome':          'Delegação Mogadouro',
+        'localizacao':   'Mogadouro',
         'responsavelId': None,
     },
     {
-        'id':           DELEGACAO_ACORES,
-        'codigo':       'ACORES',
-        'nome':         'Delegação Açores',
-        'localizacao':  'Ponta Delgada',
-        'responsavelId': None,
-    },
-    {
-        'id':           DELEGACAO_MADEIRA,
-        'codigo':       'MADEIRA',
-        'nome':         'Delegação Madeira',
-        'localizacao':  'Funchal',
-        'responsavelId': None,
-    },
-    {
-        'id':           DELEGACAO_BEIRAS,
-        'codigo':       'BEIRAS',
-        'nome':         'Delegação Beiras',
-        'localizacao':  'Viseu',
+        'id':            DELEGACAO_MIRANDA,
+        'codigo':        'MIRANDA',
+        'nome':          'Delegação Miranda do Douro',
+        'localizacao':   'Miranda do Douro',
         'responsavelId': None,
     },
 ]
@@ -116,7 +98,7 @@ USUARIOS_DATA = [
         'email':       'admin@ldsgrupo1.pt',
         'password':    'Admin123!',
         'perfil':      'ADMINISTRADOR',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
     },
     {
         'id':          '20000000-0000-0000-0000-000000000002',
@@ -124,7 +106,7 @@ USUARIOS_DATA = [
         'email':       'gestor@ldsgrupo1.pt',
         'password':    'Gestor123!',
         'perfil':      'GESTOR',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
     },
     {
         'id':          USUARIO_OPERADOR,
@@ -132,7 +114,7 @@ USUARIOS_DATA = [
         'email':       'operador@ldsgrupo1.pt',
         'password':    'Operador123!',
         'perfil':      'OPERADOR',
-        'delegacaoId': DELEGACAO_NORTE,
+        'delegacaoId': DELEGACAO_MIRANDELA,
     },
     {
         'id':          '20000000-0000-0000-0000-000000000004',
@@ -140,7 +122,7 @@ USUARIOS_DATA = [
         'email':       'financeiro@ldsgrupo1.pt',
         'password':    'Financeiro123!',
         'perfil':      'FINANCEIRO',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
     },
     {
         'id':          '20000000-0000-0000-0000-000000000005',
@@ -148,7 +130,7 @@ USUARIOS_DATA = [
         'email':       'direcao@ldsgrupo1.pt',
         'password':    'Direcao123!',
         'perfil':      'DIRECAO',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
     },
 ]
 

@@ -1,52 +1,100 @@
-import { CheckIcon } from "../shared/icons";
-import { Client } from "./ClientsPage";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Client,
+  ClientReceivable,
+  ClientServiceOrder,
+  getClient,
+  listClientReceivables,
+  listClientServiceOrders,
+} from "../services/clients";
+import { PencilIcon } from "../shared/icons";
 
 type ClientDetailPageProps = {
   client: Client;
   onBack: () => void;
+  canViewFinance: boolean;
+  onEdit: (client: Client) => void;
 };
 
-const clientOrders = [
-  { number: "OS-2024-002", service: "Tratamento Fitossanitário", date: "28/09/2024", status: "EM EXECUÇÃO", tone: "progress" },
-  { number: "OS-2024-001", service: "Análise de Solo", date: "02/10/2024", status: "A EXECUTAR", tone: "running" },
-  { number: "OS-2023-087", service: "Consultoria Agrícola", date: "15/06/2023", status: "CONCLUÍDA", tone: "done" },
-  { number: "OS-2023-054", service: "Análise de Solo", date: "20/03/2023", status: "CONCLUÍDA", tone: "done" },
-  { number: "OS-2022-112", service: "Análise de Água", date: "05/11/2022", status: "CONCLUÍDA", tone: "done" },
-];
+export function ClientDetailPage({ client, canViewFinance, onBack, onEdit }: ClientDetailPageProps) {
+  const [detail, setDetail] = useState<Client>(client);
+  const [orders, setOrders] = useState<ClientServiceOrder[]>([]);
+  const [receivables, setReceivables] = useState<ClientReceivable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const finance = useMemo(() => summarizeReceivables(receivables), [receivables]);
 
-export function ClientDetailPage({ client, onBack }: ClientDetailPageProps) {
-  const isAntónio = client.nif === "987654321";
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDetail() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const [nextDetail, nextOrders, nextReceivables] = await Promise.all([
+          getClient(client.id),
+          listClientServiceOrders(client.id),
+          canViewFinance ? listClientReceivables(client.id) : Promise.resolve([]),
+        ]);
+
+        if (isMounted) {
+          setDetail(nextDetail);
+          setOrders(nextOrders);
+          setReceivables(nextReceivables);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError instanceof Error ? loadError.message : "Nao foi possivel carregar o detalhe do cliente.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canViewFinance, client.id]);
 
   return (
     <section className="client-detail-page" data-node-id="23:1613">
-      <nav className="detail-breadcrumb" aria-label="Navegação">
+      <nav className="detail-breadcrumb" aria-label="Navegacao">
         <button type="button" onClick={onBack}>Clientes</button>
-        <span>›</span>
-        <strong>{client.name}</strong>
+        <span>&gt;</span>
+        <strong>{detail.name}</strong>
       </nav>
 
       <header className="client-hero detail-card">
-        <span className="avatar client-hero-avatar">{client.initials}</span>
+        <span className="avatar client-hero-avatar">{detail.initials}</span>
         <div>
-          <h2>{client.name}</h2>
-          <p>NIF {client.nif} · {client.associated ? "Associado" : "Não associado"} · {client.delegation}</p>
+          <h2>{detail.name}</h2>
+          <p>NIF {detail.nif} - {detail.associated ? "Associado" : "Nao associado"} - {detail.delegation}</p>
         </div>
         <div className="client-badges">
-          <span className="mini-pill mini-pill-success">✓ {client.status}</span>
-          {client.delinquent && <span className="mini-pill mini-pill-danger">⚠ Inadimplente</span>}
+          <span className="mini-pill mini-pill-success">OK {detail.status}</span>
+          {detail.delinquent && <span className="mini-pill mini-pill-danger">! Inadimplente</span>}
         </div>
         <div className="detail-actions">
-          <button className="detail-button detail-button-neutral" type="button"><span aria-hidden="true">✎</span>Editar</button>
-          <button className="detail-button detail-button-danger" type="button"><span aria-hidden="true">×</span>Desactivar Cliente</button>
+          <button className="detail-button detail-button-neutral" type="button" onClick={() => onEdit(detail)}>
+            <PencilIcon aria-hidden="true" />
+            Editar
+          </button>
         </div>
       </header>
 
-      {client.delinquent && (
+      {error ? <div className="login-alert login-alert-error">{error}</div> : null}
+      {isLoading ? <div className="login-alert">A carregar detalhe do cliente...</div> : null}
+
+      {canViewFinance && detail.delinquent && (
         <aside className="client-alert">
-          <span aria-hidden="true">⚠</span>
+          <span aria-hidden="true">!</span>
           <div>
             <strong>Cliente com pagamentos em atraso</strong>
-            <p>2 duplicatas vencidas · € 340,00 em aberto · há 45 dias</p>
+            <p>{finance.overdueCount} conta(s) vencida(s) - {formatCurrency(finance.overdue)} vencido</p>
           </div>
           <button className="clear-button" type="button">Ver Duplicatas</button>
         </aside>
@@ -57,15 +105,13 @@ export function ClientDetailPage({ client, onBack }: ClientDetailPageProps) {
           <section className="detail-card client-form-card">
             <header className="detail-card-header">
               <h3>Dados Pessoais</h3>
-              <span className="mini-pill mini-pill-warning">A editar</span>
             </header>
             <div className="detail-divider" />
             <div className="form-grid">
-              <Field label="Nome Completo" required value={client.name} wide />
-              <Field label="NIF" required value={client.nif} />
-              <Field label="Data de Nascimento" value={isAntónio ? "15/03/1975" : "10/05/1980"} />
-              <Field label="Telefone" value={client.phone} icon="☎" />
-              <Field label="Email" value={client.email} icon="✉" />
+              <Field label="Nome Completo" required value={detail.name} wide />
+              <Field label="NIF" required value={detail.nif} />
+              <Field label="Telefone" value={detail.phone} icon="Tel" />
+              <Field label="Email" value={detail.email} icon="@" />
             </div>
           </section>
 
@@ -73,26 +119,21 @@ export function ClientDetailPage({ client, onBack }: ClientDetailPageProps) {
             <h3>Morada</h3>
             <div className="detail-divider" />
             <div className="form-grid">
-              <Field label="Rua / Morada" value={isAntónio ? "Rua das Oliveiras, 42" : "Rua Principal, 18"} wide />
-              <Field label="Código Postal" value={isAntónio ? "1200-456" : "4000-100"} />
-              <Field label="Localidade" value={client.delegation} />
-              <Field label="Concelho" value={client.delegation} />
+              <Field label="Rua / Morada" value={detail.address} wide />
             </div>
           </section>
 
           <section className="detail-card client-form-card association-card">
-            <h3>Dados de Associação</h3>
+            <h3>Dados de Associacao</h3>
             <div className="detail-divider" />
             <div className="form-grid">
-              <Field label="Delegação Principal" required value={client.delegation} />
-              <Field label="Nº de Associado" value={client.associated ? "ASS-2019-0342" : "-"} />
-              <Field label="Data de Admissão" value="10/03/2019" />
+              <Field label="Delegacao Principal" required value={detail.delegation} />
               <div className="field-block">
-                <label>Delegações Adicionais</label>
+                <label>Delegacoes Adicionais</label>
                 <div className="input-like tag-input">
-                  <span>Porto ×</span>
-                  <span>Braga ×</span>
-                  <button type="button">+ Adicionar delegação</button>
+                  {detail.delegations.length > 0 ? detail.delegations.map((delegation) => (
+                    <span key={delegation.delegacaoId}>{delegation.nome}</span>
+                  )) : <span>Nenhuma delegacao associada</span>}
                 </div>
               </div>
             </div>
@@ -102,46 +143,40 @@ export function ClientDetailPage({ client, onBack }: ClientDetailPageProps) {
         <aside className="client-side-column">
           <section className="detail-card client-orders-card">
             <header className="detail-card-header">
-              <h3>Ordens de Serviço</h3>
-              <span className="mini-pill mini-pill-info">5 OS</span>
+              <h3>Ordens de Servico</h3>
+              <span className="mini-pill mini-pill-info">{orders.length} OS</span>
             </header>
             <div className="detail-divider" />
             <div className="client-order-list">
-              {clientOrders.map((order) => (
-                <article className="client-order-item" key={order.number}>
+              {orders.length === 0 ? <p>Nenhuma ordem de servico encontrada para este cliente.</p> : orders.map((order) => (
+                <article className="client-order-item" key={order.id}>
                   <div>
-                    <strong>{order.number}</strong>
-                    <span>{order.service}</span>
-                    <small>{order.date}</small>
+                    <strong>OS {shortId(order.id)}</strong>
+                    <span>{order.typePrice || "Servico nao detalhado na rota"}</span>
+                    <small>{formatDate(order.date)}</small>
                   </div>
-                  <span className={`status-pill status-${order.tone}`}>{order.status}</span>
+                  <span className={`status-pill ${statusClassForOrder(order.status)}`}>{formatStatus(order.status)}</span>
                 </article>
               ))}
             </div>
-            <button className="side-link" type="button">Ver todas as OS</button>
+            {orders.length > 0 ? <button className="side-link" type="button">Ver todas as OS</button> : null}
           </section>
 
-          <section className="detail-card client-finance-card">
-            <h3>Resumo Financeiro</h3>
-            <div className="detail-divider" />
-            <dl className="finance-summary">
-              <div><dt>Total Faturado</dt><dd>€ 855,00</dd></div>
-              <div><dt>Total Pago</dt><dd className="finance-success">€ 515,00</dd></div>
-              <div><dt>Em Aberto</dt><dd className="finance-warning">€ 340,00</dd></div>
-              <div><dt>Vencido</dt><dd className="finance-warning">€ 340,00</dd></div>
-              <div className="finance-total"><dt>Situação Financeira</dt><dd className={client.delinquent ? "finance-warning" : "finance-success"}>{client.delinquent ? "Inadimplente" : "Regular"}</dd></div>
-            </dl>
-          </section>
+          {canViewFinance ? (
+            <section className="detail-card client-finance-card">
+              <h3>Resumo Financeiro</h3>
+              <div className="detail-divider" />
+              <dl className="finance-summary">
+                <div><dt>Total Faturado</dt><dd>{formatCurrency(finance.total)}</dd></div>
+                <div><dt>Total Pago</dt><dd className="finance-success">{formatCurrency(finance.paid)}</dd></div>
+                <div><dt>Em Aberto</dt><dd className="finance-warning">{formatCurrency(finance.open)}</dd></div>
+                <div><dt>Vencido</dt><dd className="finance-warning">{formatCurrency(finance.overdue)}</dd></div>
+                <div className="finance-total"><dt>Situacao Financeira</dt><dd className={detail.delinquent ? "finance-warning" : "finance-success"}>{detail.delinquent ? "Inadimplente" : "Regular"}</dd></div>
+              </dl>
+            </section>
+          ) : null}
         </aside>
       </div>
-
-      <footer className="client-save-bar detail-card">
-        <span>Última actualização: 01/10/2024 às 11:32 por João Silva</span>
-        <div>
-          <button className="detail-button detail-button-neutral" type="button">Cancelar</button>
-          <button className="detail-button detail-button-success" type="button"><CheckIcon aria-hidden="true" />Guardar Alterações</button>
-        </div>
-      </footer>
     </section>
   );
 }
@@ -165,4 +200,60 @@ function Field({
       <div className="input-like">{icon && <i aria-hidden="true">{icon}</i>}<span>{value}</span></div>
     </div>
   );
+}
+
+function summarizeReceivables(receivables: ClientReceivable[]) {
+  return receivables.reduce(
+    (summary, receivable) => {
+      const open = Math.max(receivable.value - receivable.paidValue, 0);
+      const isOverdue = receivable.status === "VENCIDA";
+
+      return {
+        total: summary.total + receivable.value,
+        paid: summary.paid + receivable.paidValue,
+        open: summary.open + open,
+        overdue: summary.overdue + (isOverdue ? open : 0),
+        overdueCount: summary.overdueCount + (isOverdue ? 1 : 0),
+      };
+    },
+    { total: 0, paid: 0, open: 0, overdue: 0, overdueCount: 0 },
+  );
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
+}
+
+function formatDate(value: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("pt-PT").format(new Date(value));
+}
+
+function shortId(id: string) {
+  return id.slice(0, 8).toUpperCase();
+}
+
+function statusClassForOrder(status: string) {
+  const normalized = status.toUpperCase();
+
+  if (normalized === "EM_EXECUCAO") {
+    return "status-progress";
+  }
+
+  if (["CONCLUIDO", "FATURADO"].includes(normalized)) {
+    return "status-done";
+  }
+
+  if (normalized === "CANCELADO") {
+    return "status-canceled";
+  }
+
+  return "status-running";
+}
+
+function formatStatus(status: string) {
+  return status.replaceAll("_", " ");
 }

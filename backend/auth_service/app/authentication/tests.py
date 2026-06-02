@@ -112,3 +112,32 @@ class MeTests(APITestCase):
     def test_me_sem_token_retorna_401(self):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ChangePasswordTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('auth-change-password')
+        self.cred = _criar_credencial(email='password@test.com', password='senha123')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {_token_para(self.cred)}')
+
+    def test_altera_password_com_password_atual_valida(self):
+        resp = self.client.put(
+            self.url,
+            {'currentPassword': 'senha123', 'newPassword': 'novaSenha123'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.cred.refresh_from_db()
+        self.assertTrue(self.cred.check_password('novaSenha123'))
+
+    def test_rejeita_password_atual_incorreta(self):
+        resp = self.client.put(
+            self.url,
+            {'currentPassword': 'errada', 'newPassword': 'novaSenha123'},
+            format='json',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+        self.cred.refresh_from_db()
+        self.assertTrue(self.cred.check_password('senha123'))

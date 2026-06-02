@@ -47,6 +47,7 @@ class OrdemServicoServico(models.Model):
     servicoId = models.UUIDField()
     servicoDelegacaoId = models.UUIDField()
     precoAplicado = models.DecimalField(max_digits=10, decimal_places=2)
+    percentualEntrada = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     bonificado = models.BooleanField(default=False)
     createdAt = models.DateTimeField(auto_now_add=True)
 

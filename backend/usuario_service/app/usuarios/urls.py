@@ -4,6 +4,7 @@ from rest_framework import routers
 from .views import (
     UsuarioListCreateView,
     UsuarioDetailUpdateView,
+    UsuarioMeView,
     DelegacaoListCreateView,
     DelegacaoUpdateView,
     health,
@@ -12,6 +13,7 @@ from .views import (
 urlpatterns = [
     # Utilizadores
     path('usuarios/health/', health, name='usuario-health'),
+    path('usuarios/me/', UsuarioMeView.as_view(), name='usuario-me'),
     path('usuarios/', UsuarioListCreateView.as_view(), name='usuario-list-create'),
     path('usuarios/<uuid:pk>/', UsuarioDetailUpdateView.as_view(), name='usuario-detail-update'),
 

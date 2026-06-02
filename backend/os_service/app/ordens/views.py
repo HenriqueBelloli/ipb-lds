@@ -86,6 +86,24 @@ class OrdemServicoListCreateView(generics.ListCreateAPIView):
             'usuarioId': str(usuario_id),
         })
 
+        if os.status == 'PAGAMENTO_PENDENTE':
+            itens = list(os.itens.values(
+                'servicoId',
+                'servicoDelegacaoId',
+                'precoAplicado',
+                'percentualEntrada',
+                'bonificado',
+            ))
+            publish_event('os.aprovada', {
+                'servico': 'os-service',
+                'osId': str(os.id),
+                'clienteId': str(os.clienteId),
+                'itens': [{k: str(v) for k, v in item.items()} for item in itens],
+                'valorTotal': str(os.valorTotal),
+                'statusResultante': os.status,
+                'usuarioId': str(usuario_id),
+            })
+
 
 class OrdemServicoDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsOperador]
@@ -161,7 +179,13 @@ class OrdemServicoStatusView(APIView):
         )
 
         if status_anterior == 'AGUARDA_APROVACAO' and novo_status in ('PAGAMENTO_PENDENTE', 'A_EXECUTAR'):
-            itens = list(os.itens.values('servicoId', 'servicoDelegacaoId', 'precoAplicado'))
+            itens = list(os.itens.values(
+                'servicoId',
+                'servicoDelegacaoId',
+                'precoAplicado',
+                'percentualEntrada',
+                'bonificado',
+            ))
             publish_event('os.aprovada', {
                 'servico': 'os-service',
                 'osId': str(os.id),

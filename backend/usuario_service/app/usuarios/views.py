@@ -113,6 +113,29 @@ class UsuarioDetailUpdateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class UsuarioMeView(APIView):
+    permission_classes = [IsOperador]
+
+    def _get_current_usuario(self, request):
+        return get_object_or_404(Usuario, pk=request.auth.get('usuarioId'))
+
+    @extend_schema(responses=UsuarioListSerializer(many=False))
+    def get(self, request):
+        serializer = UsuarioListSerializer(self._get_current_usuario(request))
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(request=UsuarioProfileUpdateSerializer, responses=UsuarioListSerializer(many=False))
+    def put(self, request):
+        usuario = self._get_current_usuario(request)
+        serializer = UsuarioProfileUpdateSerializer(usuario, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(UsuarioListSerializer(usuario).data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class DelegacaoListCreateView(APIView):
 
     def get_permissions(self):

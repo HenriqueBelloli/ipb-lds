@@ -15,25 +15,28 @@ def handle_os_aprovada(data):
     os_id = data.get('osId')
     cliente_id = data.get('clienteId')
     itens = data.get('itens', [])
-    valor_total = Decimal(data.get('valorTotal', '0'))
     status_resultante = data.get('statusResultante')
 
     #Só gera entrada se OS foi para PAGAMENTO_PENDENTE
     if status_resultante != 'PAGAMENTO_PENDENTE':
         return
-    
-    #Calcular valor da entrada
-    #percentualEntrada vem nos itens - usar o maior percentual
-    #ou a média
 
-    percentual = max(
-        item.get('percentualEntrada', 0) for item in itens
-    ) if itens else 0
-
-    if percentual <= 0:
+    if ContaReceber.objects.filter(ordemServicoId=os_id, tipo='ENTRADA').exists():
         return
     
-    valor_entrada = (valor_total * Decimal(percentual)) / Decimal(100)
+    valor_entrada = Decimal('0')
+    for item in itens:
+        if item.get('bonificado') in (True, 'true', 'True', '1', 1):
+            continue
+
+        preco = Decimal(str(item.get('precoAplicado', '0')))
+        percentual = Decimal(str(item.get('percentualEntrada', '0')))
+        valor_entrada += (preco * percentual) / Decimal(100)
+
+    if valor_entrada <= 0:
+        return
+
+    valor_entrada = valor_entrada.quantize(Decimal('0.01'))
     data_vencimento = timezone.now().date() + timedelta(days=3)
 
     ContaReceber.objects.create(
