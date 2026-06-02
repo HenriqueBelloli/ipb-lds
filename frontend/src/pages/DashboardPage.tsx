@@ -135,9 +135,9 @@ export function DashboardPage({ user, onLogout, onUserUpdated }: DashboardPagePr
   const unreadNotificationsCount = notifications.filter((notification) => !notification.lida).length;
 
   const pageTitle = selectedOrder
-    ? "Detalhe da Ordem de Serviço"
+    ? "Detalhe da Ordem de Servi\u00e7o"
     : isCreatingOrder
-      ? "Criar Ordem de ServiÃ§o"
+      ? "Nova Ordem de Servi\u00e7o"
       : editingClient
         ? "Editar Cliente"
         : selectedClient
