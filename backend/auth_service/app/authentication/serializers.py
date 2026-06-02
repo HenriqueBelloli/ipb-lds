@@ -26,6 +26,11 @@ class RefreshResponseSerializer(serializers.Serializer):
     perfil = serializers.CharField()
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    currentPassword = serializers.CharField(write_only=True)
+    newPassword = serializers.CharField(write_only=True, min_length=8)
+
+
 class MeSerializer(serializers.Serializer):
     usuarioId = serializers.UUIDField()
     email = serializers.EmailField()

@@ -7,7 +7,7 @@ from drf_spectacular.utils import extend_schema
 
 from .models import Credencial
 from .publisher import publish_login_failed, publish_login_success
-from .serializers import LoginSerializer, MeSerializer, RefreshRequestSerializer, RefreshResponseSerializer, TokenResponseSerializer
+from .serializers import ChangePasswordSerializer, LoginSerializer, MeSerializer, RefreshRequestSerializer, RefreshResponseSerializer, TokenResponseSerializer
 
 
 def _gerar_tokens(credencial: Credencial) -> dict:
@@ -118,6 +118,29 @@ def me(request):
         'delegacaoId': token.get('delegacaoId'),
         'ativo': token.get('ativo'),
     }, status=status.HTTP_200_OK)
+
+
+@extend_schema(request=ChangePasswordSerializer, responses={204: None})
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    serializer = ChangePasswordSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    usuario_id = request.auth.get('usuarioId')
+    credencial = Credencial.objects.filter(usuarioId=usuario_id, ativo=True).first()
+
+    if credencial is None:
+        return Response({'detail': 'Credenciais nao encontradas.'}, status=status.HTTP_404_NOT_FOUND)
+
+    current_password = serializer.validated_data['currentPassword']
+    if not credencial.check_password(current_password):
+        return Response({'currentPassword': ['Password atual incorreta.']}, status=status.HTTP_400_BAD_REQUEST)
+
+    credencial.set_password(serializer.validated_data['newPassword'])
+    credencial.save(update_fields=['password'])
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
