@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
-import { AuthSession, getStoredSession, logoutFromBackend } from "./services/auth";
+import { AuthSession, getStoredSession, logoutFromBackend, updateStoredUser } from "./services/auth";
 
 export type AppUser = {
   initials: string;
@@ -23,8 +23,16 @@ export function App() {
     await logoutFromBackend(currentSession);
   }
 
+  function handleUserUpdated(user: AppUser) {
+    const updatedSession = updateStoredUser(user);
+
+    if (updatedSession) {
+      setSession(updatedSession);
+    }
+  }
+
   if (session) {
-    return <DashboardPage user={session.user} onLogout={handleLogout} />;
+    return <DashboardPage user={session.user} onLogout={handleLogout} onUserUpdated={handleUserUpdated} />;
   }
 
   return <LoginPage onAuthenticated={setSession} />;
