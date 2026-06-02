@@ -64,16 +64,10 @@ class OrdemServicoCreateSerializer(serializers.Serializer):
             for item in itens_data
             if not item.get('bonificado', False)
         ) or Decimal('0.00')
-        requer_entrada = any(
-            item.get('percentualEntrada', Decimal('0.00')) > 0 and not item.get('bonificado', False)
-            for item in itens_data
-        )
-
         with transaction.atomic():
             os = OrdemServico.objects.create(
                 **validated_data,
                 valorTotal=valor_total,
-                status='PAGAMENTO_PENDENTE' if requer_entrada else 'ORCAMENTO',
             )
             for item in itens_data:
                 OrdemServicoServico.objects.create(ordemServicoId=os, **item)
