@@ -1,139 +1,99 @@
-import { EyeIcon } from "../shared/icons";
+import { useEffect, useState } from "react";
+import { EyeIcon, PencilIcon } from "../shared/icons";
+import { listServiceOrders, ServiceOrder, ServiceOrderStatus } from "../services/serviceOrders";
 
-type OrderStatus = "A EXECUTAR" | "EM EXECUÇÃO" | "CONCLUÍDA" | "CANCELADA";
-
-export type ServiceOrder = {
-  number: string;
-  client: string;
-  service: string;
-  delegation: string;
-  status: OrderStatus;
-  date: string;
-  amount: string;
-};
-
-export const serviceOrders: ServiceOrder[] = [
-  {
-    number: "OS-2024-001",
-    client: "Manuel Costa",
-    service: "Análise de Solo",
-    delegation: "Porto",
-    status: "A EXECUTAR",
-    date: "02/10/2024",
-    amount: "€ 120,00",
-  },
-  {
-    number: "OS-2024-002",
-    client: "Ana Ferreira",
-    service: "Trat. Fitossanitário",
-    delegation: "Braga",
-    status: "EM EXECUÇÃO",
-    date: "28/09/2024",
-    amount: "€ 350,00",
-  },
-  {
-    number: "OS-2024-003",
-    client: "João Rodrigues",
-    service: "Análise de Água",
-    delegation: "Porto",
-    status: "CONCLUÍDA",
-    date: "25/09/2024",
-    amount: "€ 85,00",
-  },
-  {
-    number: "OS-2024-004",
-    client: "Maria Santos",
-    service: "Consultoria Agrícola",
-    delegation: "Aveiro",
-    status: "CONCLUÍDA",
-    date: "24/09/2024",
-    amount: "€ 200,00",
-  },
-  {
-    number: "OS-2024-005",
-    client: "António Silva",
-    service: "Análise de Solo",
-    delegation: "Lisboa",
-    status: "CANCELADA",
-    date: "20/09/2024",
-    amount: "€ 0,00",
-  },
-  {
-    number: "OS-2024-006",
-    client: "Carlos Oliveira",
-    service: "Trat. Fitossanitário",
-    delegation: "Coimbra",
-    status: "A EXECUTAR",
-    date: "18/09/2024",
-    amount: "€ 350,00",
-  },
-  {
-    number: "OS-2024-007",
-    client: "Rosa Mendes",
-    service: "Análise de Solo",
-    delegation: "Braga",
-    status: "EM EXECUÇÃO",
-    date: "15/09/2024",
-    amount: "€ 120,00",
-  },
-  {
-    number: "OS-2024-008",
-    client: "Francisco Lopes",
-    service: "Consultoria Agrícola",
-    delegation: "Porto",
-    status: "CONCLUÍDA",
-    date: "10/09/2024",
-    amount: "€ 200,00",
-  },
-];
-
-const statusClass: Record<OrderStatus, string> = {
-  "A EXECUTAR": "status-running",
-  "EM EXECUÇÃO": "status-progress",
-  CONCLUÍDA: "status-done",
-  CANCELADA: "status-canceled",
+const statusClass: Record<ServiceOrderStatus, string> = {
+  ORCAMENTO: "status-running",
+  AGUARDA_APROVACAO: "status-running",
+  PAGAMENTO_PENDENTE: "status-running",
+  A_EXECUTAR: "status-running",
+  EM_EXECUCAO: "status-progress",
+  CONCLUIDO: "status-done",
+  FATURADO: "status-done",
+  CANCELADO: "status-canceled",
 };
 
 type ServiceOrdersPageProps = {
+  onCreateOrder: () => void;
   onViewOrder: (order: ServiceOrder) => void;
 };
 
-export function ServiceOrdersPage({ onViewOrder }: ServiceOrdersPageProps) {
+export function ServiceOrdersPage({ onCreateOrder, onViewOrder }: ServiceOrdersPageProps) {
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const hasOrders = serviceOrders.length > 0;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadOrders() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const orders = await listServiceOrders();
+
+        if (isMounted) {
+          setServiceOrders(orders);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError instanceof Error ? loadError.message : "Nao foi possivel carregar as ordens de servico.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <section className="orders-page" data-node-id="13:327">
-      <div className="orders-title-row">
-        <h2>Ordens de Serviço</h2>
-        <button className="primary-action" type="button">
+      <div className="content-actions-row">
+        <h2>Ordens de Servico</h2>
+        <button className="primary-action" type="button" onClick={onCreateOrder}>
           <span aria-hidden="true">+</span>
           Nova OS
         </button>
       </div>
 
-      <form className="orders-filters" aria-label="Filtros de ordens de serviço">
+      <form className="orders-filters" aria-label="Filtros de ordens de servico">
         <select defaultValue="">
           <option value="">Todos os estados</option>
-          <option>A executar</option>
-          <option>Em execução</option>
-          <option>Concluída</option>
-          <option>Cancelada</option>
+          <option value="ORCAMENTO">Orcamento</option>
+          <option value="AGUARDA_APROVACAO">Aguarda aprovacao</option>
+          <option value="PAGAMENTO_PENDENTE">Pagamento pendente</option>
+          <option value="A_EXECUTAR">A executar</option>
+          <option value="EM_EXECUCAO">Em execucao</option>
+          <option value="CONCLUIDO">Concluida</option>
+          <option value="FATURADO">Faturada</option>
+          <option value="CANCELADO">Cancelada</option>
         </select>
         <select defaultValue="">
-          <option value="">Todas as delegações</option>
-          <option>Porto</option>
-          <option>Braga</option>
-          <option>Aveiro</option>
-          <option>Coimbra</option>
-          <option>Lisboa</option>
+          <option value="">Todas as delegacoes</option>
+          {[...new Set(serviceOrders.map((order) => order.delegation))]
+            .filter(Boolean)
+            .map((delegation) => (
+              <option key={delegation}>{delegation}</option>
+            ))}
         </select>
         <select defaultValue="">
-          <option value="">Todos os serviços</option>
-          <option>Análise de Solo</option>
-          <option>Trat. Fitossanitário</option>
-          <option>Análise de Água</option>
-          <option>Consultoria Agrícola</option>
+          <option value="">Todos os servicos</option>
+          {[...new Set(serviceOrders.map((order) => order.service))]
+            .filter(Boolean)
+            .map((service) => (
+              <option key={service}>{service}</option>
+            ))}
         </select>
         <input aria-label="Data inicial" placeholder="De" type="text" />
-        <input aria-label="Data final" placeholder="Até" type="text" />
+        <input aria-label="Data final" placeholder="Ate" type="text" />
         <button className="filter-button" type="button">
           Filtrar
         </button>
@@ -143,81 +103,88 @@ export function ServiceOrdersPage({ onViewOrder }: ServiceOrdersPageProps) {
       </form>
 
       <div className="orders-table-card">
+        {error ? <div className="orders-message orders-message-error">{error}</div> : null}
+        {isLoading ? <div className="orders-message">A carregar ordens de servico...</div> : null}
+
         <div className="orders-table-wrap">
           <table className="orders-table">
             <thead>
               <tr>
-                <th>Nº OS</th>
+                <th>No OS</th>
                 <th>Cliente</th>
-                <th>Serviço</th>
-                <th>Delegação</th>
+                <th>Delegacao</th>
                 <th>Estado</th>
                 <th>Data</th>
                 <th className="amount-cell">Valor</th>
-                <th className="actions-cell">Acções</th>
+                <th className="actions-cell">Accoes</th>
               </tr>
             </thead>
             <tbody>
-              {serviceOrders.map((order) => (
-                <tr
-                  className={statusClass[order.status]}
-                  key={order.number}
-                  onDoubleClick={() => onViewOrder(order)}
-                >
-                  <td>{order.number}</td>
-                  <td>{order.client}</td>
-                  <td>{order.service}</td>
-                  <td>{order.delegation}</td>
-                  <td>
-                    <span className={`status-pill ${statusClass[order.status]}`}>{order.status}</span>
-                  </td>
-                  <td>{order.date}</td>
-                  <td className="amount-cell">{order.amount}</td>
-                  <td className="actions-cell">
-                    <button type="button" aria-label={`Ver ${order.number}`} onClick={() => onViewOrder(order)}>
-                      <EyeIcon aria-hidden="true" />
-                    </button>
-                    <button type="button" aria-label={`Mais opções para ${order.number}`}>
-                      <span aria-hidden="true">...</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {!isLoading &&
+                serviceOrders.map((order) => (
+                  <tr
+                    className={statusClass[order.status]}
+                    key={order.id}
+                    onDoubleClick={() => onViewOrder(order)}
+                  >
+                    <td>{order.number}</td>
+                    <td>{order.client}</td>
+                    <td>{order.delegation}</td>
+                    <td>
+                      <span className={`status-pill ${statusClass[order.status]}`}>{order.statusLabel}</span>
+                    </td>
+                    <td>{order.date}</td>
+                    <td className="amount-cell">{order.amount}</td>
+                    <td className="actions-cell">
+                      <button
+                        type="button"
+                        aria-label={`Ver detalhes de ${order.number}`}
+                        title="Ver detalhes"
+                        onClick={() => onViewOrder(order)}
+                      >
+                        <EyeIcon aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Editar ${order.number}`}
+                        title="Editar"
+                        onClick={() => onViewOrder(order)}
+                      >
+                        <PencilIcon aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
 
         <footer className="orders-pagination">
-          <span>Mostrando 1–8 de 47 resultados</span>
-          <nav aria-label="Paginação das ordens de serviço">
+          <span>{hasOrders ? `Mostrando ${serviceOrders.length} resultado(s)` : "Sem resultados"}</span>
+          <nav aria-label="Paginacao das ordens de servico">
             <button type="button" disabled>
-              ‹
+              &lsaquo;
             </button>
             <button className="page-active" type="button">
               1
             </button>
-            <button type="button">2</button>
-            <button type="button">3</button>
-            <span>...</span>
-            <button type="button">6</button>
-            <button className="page-next" type="button">
-              ›
+            <button className="page-next" type="button" disabled>
+              &rsaquo;
             </button>
           </nav>
         </footer>
       </div>
 
-      <div className="orders-empty-state">
-        <span className="empty-state-label">Estado: Tabela Vazia</span>
-        <span className="empty-state-icon" aria-hidden="true">
-          ▣
-        </span>
-        <h3>Nenhuma ordem de serviço encontrada</h3>
-        <p>Tente ajustar os filtros ou crie uma nova OS</p>
-        <button className="clear-button" type="button">
-          Nova OS
-        </button>
-      </div>
+      {!isLoading && !error && !hasOrders && (
+        <div className="orders-empty-state">
+          <span className="empty-state-label">Estado: Tabela Vazia</span>
+          <span className="empty-state-icon" aria-hidden="true">
+            []
+          </span>
+          <h3>Nenhuma ordem de servico encontrada</h3>
+          <p>Tente ajustar os filtros para localizar uma OS existente.</p>
+        </div>
+      )}
     </section>
   );
 }

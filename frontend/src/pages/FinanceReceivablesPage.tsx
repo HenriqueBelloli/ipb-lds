@@ -39,7 +39,7 @@ const metrics = [
 export function FinanceReceivablesPage() {
   return (
     <section className="data-page" data-node-id="18:949">
-      <div className="data-title-row">
+      <div className="content-actions-row">
         <h2>Contas a Receber</h2>
         <div className="data-actions">
           <button className="secondary-action" type="button">Importar</button>
