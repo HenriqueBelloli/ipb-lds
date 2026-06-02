@@ -23,6 +23,7 @@ export type ServiceOrderItem = {
   serviceName: string;
   serviceDescription: string | null;
   appliedPrice: number;
+  entryPercent: number;
   bonified: boolean;
 };
 
@@ -91,6 +92,7 @@ export type ServiceOrderCreateInput = {
     serviceId: string;
     serviceDelegationId: string;
     appliedPrice: number;
+    entryPercent: number;
     bonified: boolean;
   }>;
 };
@@ -115,6 +117,7 @@ type OrdemServicoItemApi = {
   servicoId: string;
   servicoDelegacaoId: string;
   precoAplicado: string;
+  percentualEntrada: string;
   bonificado: boolean;
 };
 
@@ -246,8 +249,36 @@ export async function createServiceOrder(input: ServiceOrderCreateInput): Promis
         servicoId: item.serviceId,
         servicoDelegacaoId: item.serviceDelegationId,
         precoAplicado: item.appliedPrice.toFixed(2),
+        percentualEntrada: item.entryPercent.toFixed(2),
         bonificado: item.bonified,
       })),
+    }),
+  });
+
+  return getServiceOrder(order.id);
+}
+
+export async function updateServiceOrderStatus(
+  orderId: string,
+  status: ServiceOrderStatus,
+  observation = "",
+): Promise<ServiceOrder> {
+  const order = await requestOs<OrdemServicoApi>(`/api/ordens/${orderId}/status/`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      status,
+      observacao: observation,
+    }),
+  });
+
+  return getServiceOrder(order.id);
+}
+
+export async function cancelServiceOrder(orderId: string, reason: string): Promise<ServiceOrder> {
+  const order = await requestOs<OrdemServicoApi>(`/api/ordens/${orderId}/cancelar/`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      motivo: reason,
     }),
   });
 
@@ -340,6 +371,7 @@ function toServiceOrderItem(item: OrdemServicoItemApi, servicos: ServicoApi[]): 
     serviceName: servico?.nome ?? item.servicoId,
     serviceDescription: servico?.descricao ?? null,
     appliedPrice: Number(item.precoAplicado),
+    entryPercent: Number(item.percentualEntrada),
     bonified: item.bonificado,
   };
 }

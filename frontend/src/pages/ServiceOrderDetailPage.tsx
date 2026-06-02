@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { CheckIcon, ClipboardIcon, FileIcon, PencilIcon, SpinnerIcon } from "../shared/icons";
 import {
+  cancelServiceOrder,
   getServiceOrder,
   listServiceOrderHistory,
   listServiceOrderReceivables,
@@ -8,6 +9,7 @@ import {
   ServiceOrderHistoryItem,
   ServiceOrderReceivable,
   ServiceOrderStatus,
+  updateServiceOrderStatus,
 } from "../services/serviceOrders";
 
 type ServiceOrderDetailPageProps = {
@@ -38,11 +40,17 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
   const [historyItems, setHistoryItems] = useState<ServiceOrderHistoryItem[]>([]);
   const [receivables, setReceivables] = useState<ServiceOrderReceivable[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSavingAction, setIsSavingAction] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const currentTone = statusToneByName[detailOrder.status];
   const paidAmount = receivables.reduce((total, receivable) => total + receivable.paidValue, 0);
   const receivableAmount = receivables.reduce((total, receivable) => total + Math.max(receivable.value - receivable.paidValue, 0), 0);
   const entryReceivable = receivables.find((receivable) => receivable.type === "ENTRADA");
+  const canApproveBudget = detailOrder.status === "ORCAMENTO";
+  const canCancel = detailOrder.status !== "CANCELADO" && detailOrder.status !== "FATURADO";
 
   useEffect(() => {
     let isMounted = true;
@@ -81,6 +89,68 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
     };
   }, [order.id]);
 
+  async function refreshDetail() {
+    const [nextOrder, nextHistory, nextReceivables] = await Promise.all([
+      getServiceOrder(order.id),
+      listServiceOrderHistory(order.id),
+      listServiceOrderReceivables(order.id),
+    ]);
+
+    setDetailOrder(nextOrder);
+    setHistoryItems(nextHistory);
+    setReceivables(nextReceivables);
+  }
+
+  async function handleApproveBudget() {
+    try {
+      setIsSavingAction(true);
+      setActionError(null);
+      const targetStatus = requiresEntryPayment(detailOrder) ? "PAGAMENTO_PENDENTE" : "A_EXECUTAR";
+      let updatedOrder = detailOrder;
+
+      if (detailOrder.status === "ORCAMENTO") {
+        updatedOrder = await updateServiceOrderStatus(detailOrder.id, "AGUARDA_APROVACAO", "Orcamento aprovado.");
+      }
+
+      updatedOrder = await updateServiceOrderStatus(
+        updatedOrder.id,
+        targetStatus,
+        targetStatus === "PAGAMENTO_PENDENTE"
+          ? "OS aprovada. Entrada financeira gerada."
+          : "OS aprovada para execucao.",
+      );
+      setDetailOrder(updatedOrder);
+      await refreshDetail();
+    } catch (approveError) {
+      setActionError(approveError instanceof Error ? approveError.message : "Nao foi possivel aprovar a ordem de servico.");
+    } finally {
+      setIsSavingAction(false);
+    }
+  }
+
+  async function handleCancelOrder() {
+    const trimmedReason = cancelReason.trim();
+
+    if (!trimmedReason) {
+      setActionError("Indique o motivo do cancelamento.");
+      return;
+    }
+
+    try {
+      setIsSavingAction(true);
+      setActionError(null);
+      const updatedOrder = await cancelServiceOrder(detailOrder.id, trimmedReason);
+      setDetailOrder(updatedOrder);
+      setCancelReason("");
+      setIsCancelDialogOpen(false);
+      await refreshDetail();
+    } catch (cancelError) {
+      setActionError(cancelError instanceof Error ? cancelError.message : "Nao foi possivel cancelar a ordem de servico.");
+    } finally {
+      setIsSavingAction(false);
+    }
+  }
+
   return (
     <section className="order-detail-page" data-node-id="17:806">
       <nav className="detail-breadcrumb" aria-label="Navegacao">
@@ -92,6 +162,7 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
       </nav>
 
       {error ? <div className="orders-message orders-message-error">{error}</div> : null}
+      {actionError ? <div className="orders-message orders-message-error">{actionError}</div> : null}
       {isLoading ? <div className="orders-message">A carregar detalhe da ordem de servico...</div> : null}
 
       <header className="detail-hero">
@@ -108,14 +179,26 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
         </span>
 
         <div className="detail-actions">
-          <button className="detail-button detail-button-success" type="button">
-            <CheckIcon aria-hidden="true" />
-            Concluir OS
-          </button>
-          <button className="detail-button detail-button-danger" type="button">
-            <span aria-hidden="true">x</span>
-            Cancelar OS
-          </button>
+          {canApproveBudget ? (
+            <button className="detail-button detail-button-success" type="button" onClick={handleApproveBudget} disabled={isSavingAction}>
+              <CheckIcon aria-hidden="true" />
+              {isSavingAction ? "A aprovar..." : "Aprovar OS"}
+            </button>
+          ) : null}
+          {canCancel ? (
+            <button
+              className="detail-button detail-button-danger"
+              type="button"
+              onClick={() => {
+                setActionError(null);
+                setIsCancelDialogOpen(true);
+              }}
+              disabled={isSavingAction}
+            >
+              <span aria-hidden="true">x</span>
+              Cancelar OS
+            </button>
+          ) : null}
           <button className="detail-button detail-button-neutral" type="button">
             <PencilIcon aria-hidden="true" />
             Editar
@@ -161,7 +244,7 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
                   detailOrder.items.map((item) => (
                     <p key={item.id}>
                       <strong>{item.serviceName}</strong>
-                      {item.serviceDescription ? ` — ${item.serviceDescription}` : ""}
+                      {item.serviceDescription ? ` - ${item.serviceDescription}` : ""}
                       {" "}- {formatCurrency(item.appliedPrice)}
                       {item.bonified ? " - Bonificado" : ""}
                     </p>
@@ -255,6 +338,38 @@ export function ServiceOrderDetailPage({ order, onBack }: ServiceOrderDetailPage
           </div>
         </section>
       </div>
+
+      {isCancelDialogOpen ? (
+        <div className="profile-dialog-backdrop" role="presentation">
+          <div className="profile-dialog cancel-order-dialog" role="dialog" aria-modal="true" aria-label="Cancelar ordem de servico">
+            <div className="profile-dialog-header">
+              <h2>Cancelar OS</h2>
+              <button type="button" aria-label="Fechar" onClick={() => setIsCancelDialogOpen(false)} disabled={isSavingAction}>
+                x
+              </button>
+            </div>
+
+            <label className="field cancel-order-field">
+              Motivo do cancelamento
+              <textarea
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                placeholder="Indique o motivo..."
+                disabled={isSavingAction}
+              />
+            </label>
+
+            <div className="profile-dialog-actions">
+              <button className="clear-button" type="button" onClick={() => setIsCancelDialogOpen(false)} disabled={isSavingAction}>
+                Voltar
+              </button>
+              <button className="detail-button detail-button-danger" type="button" onClick={handleCancelOrder} disabled={isSavingAction}>
+                {isSavingAction ? "A cancelar..." : "Confirmar cancelamento"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -304,4 +419,8 @@ function summarizePaymentStatus(receivables: ServiceOrderReceivable[]) {
   }
 
   return "Pendente";
+}
+
+function requiresEntryPayment(order: ServiceOrder) {
+  return order.items.some((item) => item.entryPercent > 0 && !item.bonified);
 }
