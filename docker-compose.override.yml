@@ -5,6 +5,38 @@
 # Uso: docker compose up --build
 
 services:
+  postgres-auth:
+    ports:
+      - "15432:5432"
+
+  postgres-usuario:
+    ports:
+      - "15433:5432"
+
+  postgres-cliente:
+    ports:
+      - "15434:5432"
+
+  postgres-servico:
+    ports:
+      - "15435:5432"
+
+  postgres-os:
+    ports:
+      - "15436:5432"
+
+  postgres-financeiro:
+    ports:
+      - "15437:5432"
+
+  postgres-auditoria:
+    ports:
+      - "15438:5432"
+
+  postgres-notification:
+    ports:
+      - "15439:5432"
+
   auth-service:
     build:
       context: ./backend
