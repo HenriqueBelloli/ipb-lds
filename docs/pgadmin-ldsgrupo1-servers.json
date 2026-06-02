@@ -1,0 +1,84 @@
+{
+    "Servers":  {
+                    "1":  {
+                              "Name":  "db-auth",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15432,
+                              "MaintenanceDB":  "auth_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "2":  {
+                              "Name":  "db-usuario",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15433,
+                              "MaintenanceDB":  "usuario_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "3":  {
+                              "Name":  "db-cliente",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15434,
+                              "MaintenanceDB":  "cliente_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "4":  {
+                              "Name":  "db-servico",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15435,
+                              "MaintenanceDB":  "servico_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "5":  {
+                              "Name":  "db-os",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15436,
+                              "MaintenanceDB":  "os_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "6":  {
+                              "Name":  "db-financeiro",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15437,
+                              "MaintenanceDB":  "financeiro_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "7":  {
+                              "Name":  "db-auditoria",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15438,
+                              "MaintenanceDB":  "auditoria_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          },
+                    "8":  {
+                              "Name":  "db-notification",
+                              "Group":  "LDS Grupo 1",
+                              "Host":  "localhost",
+                              "Port":  15439,
+                              "MaintenanceDB":  "notification_db",
+                              "Username":  "postgres",
+                              "SSLMode":  "prefer",
+                              "ConnectNow":  false
+                          }
+                }
+}
