@@ -125,14 +125,9 @@ class ClienteInadimplenteView(APIView):
 
     @extend_schema(responses=ClienteInadimplenteSerializer)
     def get(self, request, clienteId):
-        hoje = timezone.now().date()
-
         inadimplente = ContaReceber.objects.filter(
             clienteId=clienteId,
-            tipo='MENSALIDADE',
-            status__in=['ABERTA', 'VENCIDA'],
-            dataVencimento__year=hoje.year,
-            dataVencimento__month=hoje.month
+            status='VENCIDA'
         ).exists()
 
         return Response({'inadimplente': inadimplente}, status=status.HTTP_200_OK)
