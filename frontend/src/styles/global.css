@@ -995,6 +995,50 @@ input:disabled {
   box-shadow: 0 0 0 3px rgba(0, 159, 253, 0.1);
 }
 
+.receive-payment-dialog {
+  width: min(560px, 100%);
+}
+
+.profile-dialog-header small {
+  display: block;
+  margin-top: 4px;
+  color: #969696;
+  font-size: 13px;
+}
+
+.receive-payment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #e7e7e7;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.receive-payment-summary div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-right: 1px solid #e7e7e7;
+}
+
+.receive-payment-summary div:last-child {
+  border-right: 0;
+}
+
+.receive-payment-summary dt {
+  color: #969696;
+  font-size: 12px;
+}
+
+.receive-payment-summary dd {
+  margin: 0;
+  color: #1c1c1c;
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .profile-dialog-section {
   display: grid;
   gap: 12px;

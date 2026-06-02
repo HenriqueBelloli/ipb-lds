@@ -105,12 +105,12 @@ export async function listFinanceReceivables(filters: FinanceReceivableFilters =
     });
 }
 
-export async function registerReceivablePayment(receivableId: string, value: number): Promise<void> {
+export async function registerReceivablePayment(receivableId: string, value: number, reference: string | null = null): Promise<void> {
   await requestFinance(`/api/financeiro/contas-receber/${receivableId}/pagamentos/`, {
     method: "POST",
     body: JSON.stringify({
       valor: value.toFixed(2),
-      referenciaBancaria: null,
+      referenciaBancaria: reference,
     }),
   });
 }
@@ -164,7 +164,12 @@ function normalizeListResponse<T>(response: ListResponse<T>): T[] {
 
 async function getErrorMessage(response: Response, fallbackMessage: string) {
   try {
-    const data = (await response.json()) as { detail?: string; erro?: string; message?: string };
+    const data = (await response.json()) as string | { detail?: string; erro?: string; message?: string };
+
+    if (typeof data === "string") {
+      return data;
+    }
+
     return data.detail ?? data.erro ?? data.message ?? fallbackMessage;
   } catch {
     return fallbackMessage;

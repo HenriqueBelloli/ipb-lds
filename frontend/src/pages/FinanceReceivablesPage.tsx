@@ -21,6 +21,9 @@ export function FinanceReceivablesPage() {
   const [draftFilters, setDraftFilters] = useState<FinanceReceivableFilters>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [receivingReceivable, setReceivingReceivable] = useState<FinanceReceivable | null>(null);
+  const [paymentValue, setPaymentValue] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const metrics = useMemo(() => {
@@ -89,24 +92,37 @@ export function FinanceReceivablesPage() {
     setFilters({});
   }
 
-  async function handleReceive(receivable: FinanceReceivable) {
-    const input = window.prompt("Valor recebido", receivable.openAmount.toFixed(2));
+  function openReceiveDialog(receivable: FinanceReceivable) {
+    setReceivingReceivable(receivable);
+    setPaymentValue(receivable.openAmount.toFixed(2));
+    setPaymentReference("");
+    setError(null);
+  }
 
-    if (!input) {
+  async function handleReceiveSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!receivingReceivable) {
       return;
     }
 
-    const value = Number(input.replace(",", "."));
+    const value = Number(paymentValue.replace(",", "."));
 
     if (!Number.isFinite(value) || value <= 0) {
       setError("Informe um valor de pagamento valido.");
       return;
     }
 
+    if (value > receivingReceivable.openAmount) {
+      setError("O valor recebido nao pode exceder o saldo em aberto.");
+      return;
+    }
+
     try {
       setIsSavingPayment(true);
       setError(null);
-      await registerReceivablePayment(receivable.id, value);
+      await registerReceivablePayment(receivingReceivable.id, value, paymentReference.trim() || null);
+      setReceivingReceivable(null);
       setFilters((current) => ({ ...current }));
     } catch (paymentError) {
       setError(paymentError instanceof Error ? paymentError.message : "Nao foi possivel registar o pagamento.");
@@ -220,7 +236,7 @@ export function FinanceReceivablesPage() {
                     {item.status === "PAGA" ? (
                       <button type="button" aria-label={`Ver ${item.number}`}><EyeIcon aria-hidden="true" /></button>
                     ) : (
-                      <button className="receive-button" type="button" onClick={() => void handleReceive(item)} disabled={isSavingPayment}>
+                      <button className="receive-button" type="button" onClick={() => openReceiveDialog(item)} disabled={isSavingPayment}>
                         Receber
                       </button>
                     )}
@@ -247,6 +263,66 @@ export function FinanceReceivablesPage() {
           <h3>Nenhuma conta a receber encontrada</h3>
           <p>Tente ajustar os filtros ou aguarde novas faturacoes do sistema.</p>
           <button className="clear-button" type="button" onClick={handleReset}>Limpar filtros</button>
+        </div>
+      ) : null}
+
+      {receivingReceivable ? (
+        <div className="profile-dialog-backdrop" role="presentation">
+          <form className="profile-dialog receive-payment-dialog" role="dialog" aria-modal="true" aria-label="Receber duplicata" onSubmit={handleReceiveSubmit}>
+            <div className="profile-dialog-header">
+              <div>
+                <h2>Receber duplicata</h2>
+                <small>{receivingReceivable.number} - {receivingReceivable.client}</small>
+              </div>
+              <button type="button" aria-label="Fechar" onClick={() => setReceivingReceivable(null)} disabled={isSavingPayment}>
+                x
+              </button>
+            </div>
+
+            <dl className="receive-payment-summary">
+              <div>
+                <dt>Valor</dt>
+                <dd>{formatCurrency(receivingReceivable.amount)}</dd>
+              </div>
+              <div>
+                <dt>Pago</dt>
+                <dd>{formatCurrency(receivingReceivable.paidAmount)}</dd>
+              </div>
+              <div>
+                <dt>Em aberto</dt>
+                <dd>{formatCurrency(receivingReceivable.openAmount)}</dd>
+              </div>
+            </dl>
+
+            <label className="field">
+              Valor recebido
+              <input
+                inputMode="decimal"
+                value={paymentValue}
+                onChange={(event) => setPaymentValue(event.target.value)}
+                disabled={isSavingPayment}
+              />
+            </label>
+
+            <label className="field">
+              Referencia bancaria
+              <input
+                value={paymentReference}
+                onChange={(event) => setPaymentReference(event.target.value)}
+                placeholder="Opcional"
+                disabled={isSavingPayment}
+              />
+            </label>
+
+            <div className="profile-dialog-actions">
+              <button className="clear-button" type="button" onClick={() => setReceivingReceivable(null)} disabled={isSavingPayment}>
+                Cancelar
+              </button>
+              <button className="primary-action" type="submit" disabled={isSavingPayment}>
+                {isSavingPayment ? "A receber..." : "Confirmar recebimento"}
+              </button>
+            </div>
+          </form>
         </div>
       ) : null}
     </section>
