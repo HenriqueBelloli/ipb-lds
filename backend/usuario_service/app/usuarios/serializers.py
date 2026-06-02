@@ -65,6 +65,12 @@ class UsuarioUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
+class UsuarioProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Usuario
+        fields = ['nome']
+
+
 class DelegacaoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Delegacao
