@@ -1,49 +1,144 @@
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { EyeIcon } from "../shared/icons";
-
-type ReceivableStatus = "EM ABERTO" | "PAGO" | "VENCIDO";
-
-type Receivable = {
-  number: string;
-  client: string;
-  order: string;
-  type: string;
-  dueDate: string;
-  amount: string;
-  status: ReceivableStatus;
-};
-
-const receivables: Receivable[] = [
-  { number: "DUP-2024-001", client: "Manuel Costa", order: "OS-2024-001", type: "Entrada", dueDate: "05/10/2024", amount: "€36,00", status: "EM ABERTO" },
-  { number: "DUP-2024-002", client: "Ana Ferreira", order: "OS-2024-002", type: "Entrada", dueDate: "02/10/2024", amount: "€105,00", status: "PAGO" },
-  { number: "DUP-2024-003", client: "João Rodrigues", order: "OS-2024-003", type: "Saldo Final", dueDate: "30/09/2024", amount: "€76,50", status: "VENCIDO" },
-  { number: "DUP-2024-004", client: "Maria Santos", order: "OS-2024-004", type: "Saldo Final", dueDate: "28/09/2024", amount: "€160,00", status: "PAGO" },
-  { number: "DUP-2024-005", client: "Carlos Oliveira", order: "OS-2024-006", type: "Entrada", dueDate: "25/09/2024", amount: "€105,00", status: "VENCIDO" },
-  { number: "DUP-2024-006", client: "Rosa Mendes", order: "OS-2024-007", type: "Mensalidade", dueDate: "01/10/2024", amount: "€45,00", status: "EM ABERTO" },
-  { number: "DUP-2024-007", client: "Francisco Lopes", order: "OS-2024-008", type: "Saldo Final", dueDate: "15/09/2024", amount: "€160,00", status: "PAGO" },
-  { number: "DUP-2024-008", client: "António Silva", order: "OS-2024-005", type: "Mensalidade", dueDate: "01/09/2024", amount: "€45,00", status: "VENCIDO" },
-];
+import {
+  FinanceReceivable,
+  FinanceReceivableFilters,
+  ReceivableStatus,
+  listFinanceReceivables,
+  registerReceivablePayment,
+} from "../services/finance";
 
 const statusClass: Record<ReceivableStatus, string> = {
-  "EM ABERTO": "status-running",
-  PAGO: "status-done",
-  VENCIDO: "status-canceled",
+  ABERTA: "status-running",
+  PARCIAL: "status-progress",
+  PAGA: "status-done",
+  VENCIDA: "status-canceled",
 };
 
-const metrics = [
-  { value: "€ 48.320,00", label: "Faturação total emitida" },
-  { value: "€ 35.570,00", label: "Pagamentos recebidos", tone: "success" },
-  { value: "€ 9.550,00", label: "Aguarda recebimento", tone: "warning" },
-  { value: "€ 3.200,00", label: "Em atraso", tone: "danger" },
-];
-
 export function FinanceReceivablesPage() {
+  const [receivables, setReceivables] = useState<FinanceReceivable[]>([]);
+  const [filters, setFilters] = useState<FinanceReceivableFilters>({});
+  const [draftFilters, setDraftFilters] = useState<FinanceReceivableFilters>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [receivingReceivable, setReceivingReceivable] = useState<FinanceReceivable | null>(null);
+  const [paymentValue, setPaymentValue] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const metrics = useMemo(() => {
+    const totals = receivables.reduce(
+      (summary, receivable) => ({
+        total: summary.total + receivable.amount,
+        paid: summary.paid + receivable.paidAmount,
+        open: summary.open + receivable.openAmount,
+        overdue: summary.overdue + (receivable.status === "VENCIDA" ? receivable.openAmount : 0),
+      }),
+      { total: 0, paid: 0, open: 0, overdue: 0 },
+    );
+
+    return [
+      { value: formatCurrency(totals.total), label: "Faturacao total emitida" },
+      { value: formatCurrency(totals.paid), label: "Pagamentos recebidos", tone: "success" },
+      { value: formatCurrency(totals.open), label: "Aguarda recebimento", tone: "warning" },
+      { value: formatCurrency(totals.overdue), label: "Em atraso", tone: "danger" },
+    ];
+  }, [receivables]);
+
+  const delegationOptions = useMemo(
+    () => Array.from(new Set(receivables.map((receivable) => receivable.delegation).filter((delegation) => delegation !== "-"))).sort(),
+    [receivables],
+  );
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadReceivables() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const nextReceivables = await listFinanceReceivables(filters);
+
+        if (isCurrent) {
+          setReceivables(nextReceivables);
+        }
+      } catch (loadError) {
+        if (isCurrent) {
+          setReceivables([]);
+          setError(loadError instanceof Error ? loadError.message : "Nao foi possivel carregar as contas a receber.");
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadReceivables();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [filters]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFilters(draftFilters);
+  }
+
+  function handleReset() {
+    setDraftFilters({});
+    setFilters({});
+  }
+
+  function openReceiveDialog(receivable: FinanceReceivable) {
+    setReceivingReceivable(receivable);
+    setPaymentValue(receivable.openAmount.toFixed(2));
+    setPaymentReference("");
+    setError(null);
+  }
+
+  async function handleReceiveSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!receivingReceivable) {
+      return;
+    }
+
+    const value = Number(paymentValue.replace(",", "."));
+
+    if (!Number.isFinite(value) || value <= 0) {
+      setError("Informe um valor de pagamento valido.");
+      return;
+    }
+
+    if (value > receivingReceivable.openAmount) {
+      setError("O valor recebido nao pode exceder o saldo em aberto.");
+      return;
+    }
+
+    try {
+      setIsSavingPayment(true);
+      setError(null);
+      await registerReceivablePayment(receivingReceivable.id, value, paymentReference.trim() || null);
+      setReceivingReceivable(null);
+      setFilters((current) => ({ ...current }));
+    } catch (paymentError) {
+      setError(paymentError instanceof Error ? paymentError.message : "Nao foi possivel registar o pagamento.");
+    } finally {
+      setIsSavingPayment(false);
+    }
+  }
+
   return (
     <section className="data-page" data-node-id="18:949">
-      <div className="data-title-row">
+      <div className="content-actions-row">
         <h2>Contas a Receber</h2>
         <div className="data-actions">
-          <button className="secondary-action" type="button">Importar</button>
-          <button className="primary-action" type="button">Exportar</button>
+          <button className="secondary-action" type="button" onClick={() => setFilters({ ...filters })} disabled={isLoading}>
+            Actualizar
+          </button>
         </div>
       </div>
 
@@ -56,46 +151,94 @@ export function FinanceReceivablesPage() {
         ))}
       </div>
 
-      <form className="data-filters finance-filters" aria-label="Filtros de duplicatas">
-        <select defaultValue=""><option value="">Todos os estados</option><option>Em aberto</option><option>Pago</option><option>Vencido</option></select>
-        <select defaultValue=""><option value="">Todos os tipos</option><option>Entrada</option><option>Saldo Final</option><option>Mensalidade</option></select>
-        <select defaultValue=""><option value="">Todas as delegações</option><option>Porto</option><option>Braga</option><option>Lisboa</option></select>
-        <input aria-label="Pesquisar cliente" placeholder="Pesquisar cliente..." type="search" />
-        <input aria-label="Data inicial" placeholder="De" type="text" />
-        <input aria-label="Data final" placeholder="Até" type="text" />
-        <button className="filter-button" type="button">Filtrar</button>
+      <form className="data-filters finance-filters" aria-label="Filtros de duplicatas" onSubmit={handleSubmit} onReset={handleReset}>
+        <select
+          value={draftFilters.status ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, status: event.target.value as FinanceReceivableFilters["status"] }))}
+        >
+          <option value="">Todos os estados</option>
+          <option value="ABERTA">Em aberto</option>
+          <option value="PARCIAL">Parcial</option>
+          <option value="PAGA">Paga</option>
+          <option value="VENCIDA">Vencida</option>
+        </select>
+        <select
+          value={draftFilters.type ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, type: event.target.value as FinanceReceivableFilters["type"] }))}
+        >
+          <option value="">Todos os tipos</option>
+          <option value="ENTRADA">Entrada</option>
+          <option value="SALDO_FINAL">Saldo final</option>
+          <option value="MENSALIDADE">Mensalidade</option>
+        </select>
+        <select
+          value={draftFilters.delegation ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, delegation: event.target.value }))}
+        >
+          <option value="">Todas as delegacoes</option>
+          {delegationOptions.map((delegation) => <option key={delegation}>{delegation}</option>)}
+        </select>
+        <input
+          aria-label="Pesquisar cliente"
+          placeholder="Pesquisar cliente ou duplicata..."
+          type="search"
+          value={draftFilters.query ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, query: event.target.value }))}
+        />
+        <input
+          aria-label="Data inicial"
+          placeholder="De"
+          type="date"
+          value={draftFilters.dueDateFrom ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, dueDateFrom: event.target.value }))}
+        />
+        <input
+          aria-label="Data final"
+          placeholder="Ate"
+          type="date"
+          value={draftFilters.dueDateTo ?? ""}
+          onChange={(event) => setDraftFilters((current) => ({ ...current, dueDateTo: event.target.value }))}
+        />
+        <button className="filter-button" type="submit" disabled={isLoading}>Filtrar</button>
+        <button className="clear-button" type="reset">Limpar</button>
       </form>
+
+      {error ? <div className="login-alert login-alert-error">{error}</div> : null}
 
       <div className="data-table-card">
         <div className="data-table-wrap">
           <table className="data-table receivables-table">
             <thead>
               <tr>
-                <th>Nº Duplicata</th>
+                <th>No. Duplicata</th>
                 <th>Cliente</th>
                 <th>OS Origem</th>
                 <th>Tipo</th>
                 <th>Vencimento</th>
                 <th className="amount-cell">Valor</th>
                 <th>Estado</th>
-                <th className="actions-cell">Acções</th>
+                <th className="actions-cell">Accoes</th>
               </tr>
             </thead>
             <tbody>
-              {receivables.map((item) => (
-                <tr className={statusClass[item.status]} key={item.number}>
+              {isLoading ? (
+                <tr><td colSpan={8}>A carregar contas a receber...</td></tr>
+              ) : receivables.map((item) => (
+                <tr className={statusClass[item.status]} key={item.id}>
                   <td>{item.number}</td>
                   <td>{item.client}</td>
                   <td>{item.order}</td>
-                  <td>{item.type}</td>
-                  <td>{item.dueDate}</td>
-                  <td className="amount-cell">{item.amount}</td>
-                  <td><span className={`status-pill ${statusClass[item.status]}`}>{item.status}</span></td>
+                  <td>{item.typeLabel}</td>
+                  <td>{formatDate(item.dueDate)}</td>
+                  <td className="amount-cell">{formatCurrency(item.amount)}</td>
+                  <td><span className={`status-pill ${statusClass[item.status]}`}>{item.statusLabel}</span></td>
                   <td className="actions-cell">
-                    {item.status === "PAGO" ? (
+                    {item.status === "PAGA" ? (
                       <button type="button" aria-label={`Ver ${item.number}`}><EyeIcon aria-hidden="true" /></button>
                     ) : (
-                      <button className="receive-button" type="button">Receber</button>
+                      <button className="receive-button" type="button" onClick={() => openReceiveDialog(item)} disabled={isSavingPayment}>
+                        Receber
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -105,17 +248,98 @@ export function FinanceReceivablesPage() {
         </div>
 
         <footer className="data-pagination">
-          <span>Mostrando 1–8 de 34 duplicatas</span>
-          <nav aria-label="Paginação de duplicatas">
-            <button type="button" disabled>‹</button>
+          <span>{isLoading ? "A carregar duplicatas..." : `Mostrando ${receivables.length} duplicata${receivables.length === 1 ? "" : "s"}`}</span>
+          <nav aria-label="Paginacao de duplicatas">
+            <button type="button" disabled>&lt;</button>
             <button className="page-active" type="button">1</button>
-            <button type="button">2</button>
-            <button type="button">3</button>
-            <button type="button">4</button>
-            <button className="page-next" type="button">›</button>
+            <button className="page-next" type="button" disabled>&gt;</button>
           </nav>
         </footer>
       </div>
+
+      {!isLoading && !error && receivables.length === 0 ? (
+        <div className="data-empty-state">
+          <span className="empty-state-icon" aria-hidden="true">[]</span>
+          <h3>Nenhuma conta a receber encontrada</h3>
+          <p>Tente ajustar os filtros ou aguarde novas faturacoes do sistema.</p>
+          <button className="clear-button" type="button" onClick={handleReset}>Limpar filtros</button>
+        </div>
+      ) : null}
+
+      {receivingReceivable ? (
+        <div className="profile-dialog-backdrop" role="presentation">
+          <form className="profile-dialog receive-payment-dialog" role="dialog" aria-modal="true" aria-label="Receber duplicata" onSubmit={handleReceiveSubmit}>
+            <div className="profile-dialog-header">
+              <div>
+                <h2>Receber duplicata</h2>
+                <small>{receivingReceivable.number} - {receivingReceivable.client}</small>
+              </div>
+              <button type="button" aria-label="Fechar" onClick={() => setReceivingReceivable(null)} disabled={isSavingPayment}>
+                x
+              </button>
+            </div>
+
+            <dl className="receive-payment-summary">
+              <div>
+                <dt>Valor</dt>
+                <dd>{formatCurrency(receivingReceivable.amount)}</dd>
+              </div>
+              <div>
+                <dt>Pago</dt>
+                <dd>{formatCurrency(receivingReceivable.paidAmount)}</dd>
+              </div>
+              <div>
+                <dt>Em aberto</dt>
+                <dd>{formatCurrency(receivingReceivable.openAmount)}</dd>
+              </div>
+            </dl>
+
+            <label className="field">
+              Valor recebido
+              <input
+                inputMode="decimal"
+                value={paymentValue}
+                onChange={(event) => setPaymentValue(event.target.value)}
+                disabled={isSavingPayment}
+              />
+            </label>
+
+            <label className="field">
+              Referencia bancaria
+              <input
+                value={paymentReference}
+                onChange={(event) => setPaymentReference(event.target.value)}
+                placeholder="Opcional"
+                disabled={isSavingPayment}
+              />
+            </label>
+
+            <div className="profile-dialog-actions">
+              <button className="clear-button" type="button" onClick={() => setReceivingReceivable(null)} disabled={isSavingPayment}>
+                Cancelar
+              </button>
+              <button className="primary-action" type="submit" disabled={isSavingPayment}>
+                {isSavingPayment ? "A receber..." : "Confirmar recebimento"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </section>
   );
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-PT", {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number.isFinite(value) ? value : 0);
+}
+
+function formatDate(value: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("pt-PT").format(new Date(value));
 }

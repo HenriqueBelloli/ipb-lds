@@ -6,7 +6,10 @@ from .models import OrdemServico, OrdemServicoServico, OrdemServicoHistorico
 class OrdemServicoServicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdemServicoServico
-        fields = ['id', 'servicoId', 'servicoDelegacaoId', 'precoAplicado', 'bonificado', 'createdAt']
+        fields = [
+            'id', 'servicoId', 'servicoDelegacaoId', 'precoAplicado',
+            'percentualEntrada', 'bonificado', 'createdAt',
+        ]
         read_only_fields = ['id', 'createdAt']
 
 
@@ -30,6 +33,14 @@ class OrdemServicoItemCreateSerializer(serializers.Serializer):
     servicoId = serializers.UUIDField()
     servicoDelegacaoId = serializers.UUIDField()
     precoAplicado = serializers.DecimalField(max_digits=10, decimal_places=2)
+    percentualEntrada = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        min_value=Decimal('0'),
+        max_value=Decimal('100'),
+        default=Decimal('0.00'),
+        required=False,
+    )
     bonificado = serializers.BooleanField(default=False)
 
 
@@ -53,9 +64,11 @@ class OrdemServicoCreateSerializer(serializers.Serializer):
             for item in itens_data
             if not item.get('bonificado', False)
         ) or Decimal('0.00')
-
         with transaction.atomic():
-            os = OrdemServico.objects.create(**validated_data, valorTotal=valor_total)
+            os = OrdemServico.objects.create(
+                **validated_data,
+                valorTotal=valor_total,
+            )
             for item in itens_data:
                 OrdemServicoServico.objects.create(ordemServicoId=os, **item)
 

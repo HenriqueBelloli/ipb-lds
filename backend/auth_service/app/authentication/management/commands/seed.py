@@ -6,8 +6,8 @@ UUIDs fixos — devem ser usados também no seed do usuario-service
 para manter consistência entre os dois serviços.
 
 Delegações:
-  Sede:              10000000-0000-0000-0000-000000000001
-  Delegação Norte:   10000000-0000-0000-0000-000000000002
+  Bragança:   10000000-0000-0000-0000-000000000001
+  Mirandela:  10000000-0000-0000-0000-000000000002
 
 Utilizadores:
   ADMINISTRADOR:     20000000-0000-0000-0000-000000000001
@@ -22,41 +22,41 @@ from authentication.models import Credencial
 
 # ── UUIDs fixos partilhados com o usuario-service ────────────────────────────
 
-DELEGACAO_SEDE   = '10000000-0000-0000-0000-000000000001'
-DELEGACAO_NORTE  = '10000000-0000-0000-0000-000000000002'
+DELEGACAO_BRAGANCA  = '10000000-0000-0000-0000-000000000001'
+DELEGACAO_MIRANDELA = '10000000-0000-0000-0000-000000000002'
 
 SEED_DATA = [
     {
         'usuarioId':   '20000000-0000-0000-0000-000000000001',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
         'email':       'admin@ldsgrupo1.pt',
         'password':    'Admin123!',
         'perfil':      'ADMINISTRADOR',
     },
     {
         'usuarioId':   '20000000-0000-0000-0000-000000000002',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
         'email':       'gestor@ldsgrupo1.pt',
         'password':    'Gestor123!',
         'perfil':      'GESTOR',
     },
     {
         'usuarioId':   '20000000-0000-0000-0000-000000000003',
-        'delegacaoId': DELEGACAO_NORTE,
+        'delegacaoId': DELEGACAO_MIRANDELA,
         'email':       'operador@ldsgrupo1.pt',
         'password':    'Operador123!',
         'perfil':      'OPERADOR',
     },
     {
         'usuarioId':   '20000000-0000-0000-0000-000000000004',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
         'email':       'financeiro@ldsgrupo1.pt',
         'password':    'Financeiro123!',
         'perfil':      'FINANCEIRO',
     },
     {
         'usuarioId':   '20000000-0000-0000-0000-000000000005',
-        'delegacaoId': DELEGACAO_SEDE,
+        'delegacaoId': DELEGACAO_BRAGANCA,
         'email':       'direcao@ldsgrupo1.pt',
         'password':    'Direcao123!',
         'perfil':      'DIRECAO',

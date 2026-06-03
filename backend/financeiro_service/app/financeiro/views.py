@@ -125,14 +125,9 @@ class ClienteInadimplenteView(APIView):
 
     @extend_schema(responses=ClienteInadimplenteSerializer)
     def get(self, request, clienteId):
-        hoje = timezone.now().date()
-
         inadimplente = ContaReceber.objects.filter(
             clienteId=clienteId,
-            tipo='MENSALIDADE',
-            status__in=['ABERTA', 'VENCIDA'],
-            dataVencimento__year=hoje.year,
-            dataVencimento__month=hoje.month
+            status='VENCIDA'
         ).exists()
 
         return Response({'inadimplente': inadimplente}, status=status.HTTP_200_OK)
@@ -178,7 +173,7 @@ class RegistrarPagamentoView(APIView):
         try:
             pagamento = PagamentoService.registrar(str(contaReceberId), valor, date.today(), referencia, usuario_id)
         except ValidationError as e:
-            return Response(e.message, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': e.messages[0] if e.messages else str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = PagamentoConfirmadoCreateSerializer(pagamento)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

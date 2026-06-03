@@ -9,16 +9,16 @@ Clientes:
   Cliente Não Associado Demo: 30000000-0000-0000-0000-000000000002
 
 Delegações (UUIDs fixos do usuario_service):
-  Sede:            10000000-0000-0000-0000-000000000001
-  Delegação Norte: 10000000-0000-0000-0000-000000000002
+  Bragança:   10000000-0000-0000-0000-000000000001
+  Mirandela:  10000000-0000-0000-0000-000000000002
 """
 
 from django.core.management.base import BaseCommand
 
 from clientes.models import Cliente, ClienteDelegacao
 
-DELEGACAO_SEDE  = '10000000-0000-0000-0000-000000000001'
-DELEGACAO_NORTE = '10000000-0000-0000-0000-000000000002'
+DELEGACAO_BRAGANCA  = '10000000-0000-0000-0000-000000000001'
+DELEGACAO_MIRANDELA = '10000000-0000-0000-0000-000000000002'
 
 CLIENTES_DATA = [
     {
@@ -29,7 +29,7 @@ CLIENTES_DATA = [
         'email':         'associado@demo.pt',
         'flagAssociado': True,
         'ativo':         True,
-        'delegacoes':    [DELEGACAO_SEDE, DELEGACAO_NORTE],
+        'delegacoes':    [DELEGACAO_BRAGANCA, DELEGACAO_MIRANDELA],
     },
     {
         'id':            '30000000-0000-0000-0000-000000000002',
@@ -39,7 +39,7 @@ CLIENTES_DATA = [
         'email':         'naosociado@demo.pt',
         'flagAssociado': False,
         'ativo':         True,
-        'delegacoes':    [DELEGACAO_NORTE],
+        'delegacoes':    [DELEGACAO_MIRANDELA],
     },
 ]
 

@@ -6,8 +6,8 @@ UUIDs fixos — devem ser usados também nos seeds dos outros serviços
 para manter consistência entre os serviços.
 
 Delegações:
-  Sede:              10000000-0000-0000-0000-000000000001
-  Delegação Norte:   10000000-0000-0000-0000-000000000002
+  Bragança:   10000000-0000-0000-0000-000000000001
+  Mirandela:  10000000-0000-0000-0000-000000000002
 
 Serviços:
   Consulta Médica:   30000000-0000-0000-0000-000000000001
@@ -19,8 +19,9 @@ from django.core.management.base import BaseCommand
 from servicos.models import Servico, ServicoDelegacao
 
 # ── UUIDs fixos partilhados com os restantes serviços ────────────────────────
-DELEGACAO_SEDE  = '10000000-0000-0000-0000-000000000001'
-DELEGACAO_NORTE = '10000000-0000-0000-0000-000000000002'
+DELEGACAO_BRAGANCA  = '10000000-0000-0000-0000-000000000001'
+DELEGACAO_MIRANDELA = '10000000-0000-0000-0000-000000000002'
+
 
 # ── Dados base dos serviços ───────────────────────────────────────────────────
 SERVICOS_DATA = [
@@ -51,42 +52,48 @@ SERVICOS_DATA = [
 # precoAssociado    → preço para utentes associados
 # precoNaoAssociado → preço para utentes não associados
 # percentualEntrada → percentual de entrada (0–100)
+# IDs fixos para ServicoDelegacao — referenciados pelo os-service seed
 SERVICOS_DELEGACOES_DATA = [
     {
+        'id':                 '40000000-0000-0000-0000-000000000001',
         'servicoId':          '30000000-0000-0000-0000-000000000001',
-        'delegacaoId':        DELEGACAO_SEDE,
+        'delegacaoId':        DELEGACAO_BRAGANCA,
         'precoAssociado':     '25.00',
         'precoNaoAssociado':  '45.00',
         'percentualEntrada':  '20.00',
         'ativo':              True,
     },
     {
+        'id':                 '40000000-0000-0000-0000-000000000002',
         'servicoId':          '30000000-0000-0000-0000-000000000001',
-        'delegacaoId':        DELEGACAO_NORTE,
+        'delegacaoId':        DELEGACAO_MIRANDELA,
         'precoAssociado':     '22.00',
         'precoNaoAssociado':  '40.00',
         'percentualEntrada':  '20.00',
         'ativo':              True,
     },
     {
+        'id':                 '40000000-0000-0000-0000-000000000003',
         'servicoId':          '30000000-0000-0000-0000-000000000002',
-        'delegacaoId':        DELEGACAO_SEDE,
+        'delegacaoId':        DELEGACAO_BRAGANCA,
         'precoAssociado':     '15.00',
         'precoNaoAssociado':  '30.00',
         'percentualEntrada':  '10.00',
         'ativo':              True,
     },
     {
+        'id':                 '40000000-0000-0000-0000-000000000004',
         'servicoId':          '30000000-0000-0000-0000-000000000002',
-        'delegacaoId':        DELEGACAO_NORTE,
+        'delegacaoId':        DELEGACAO_MIRANDELA,
         'precoAssociado':     '13.00',
         'precoNaoAssociado':  '28.00',
         'percentualEntrada':  '10.00',
         'ativo':              True,
     },
     {
+        'id':                 '40000000-0000-0000-0000-000000000005',
         'servicoId':          '30000000-0000-0000-0000-000000000003',
-        'delegacaoId':        DELEGACAO_SEDE,
+        'delegacaoId':        DELEGACAO_BRAGANCA,
         'precoAssociado':     '10.00',
         'precoNaoAssociado':  '20.00',
         'percentualEntrada':  '0.00',
@@ -136,8 +143,7 @@ class Command(BaseCommand):
             servico = Servico.objects.get(id=dados['servicoId'])
 
             ja_existe = ServicoDelegacao.objects.filter(
-                servicoId=servico,
-                delegacaoId=dados['delegacaoId'],
+                id=dados['id'],
             ).exists()
 
             if ja_existe:
@@ -145,6 +151,7 @@ class Command(BaseCommand):
                 continue
 
             ServicoDelegacao.objects.create(
+                id=dados['id'],
                 servicoId=servico,
                 delegacaoId=dados['delegacaoId'],
                 precoAssociado=dados['precoAssociado'],
